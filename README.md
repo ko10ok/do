@@ -6,12 +6,14 @@ A powerful command-line interface for interacting with various Large Language Mo
 
 - **Multiple LLM Providers**: Support for Claude, OpenAI, and DeepSeek
 - **Cross-Platform Support**: Native Unicode handling on Windows and Unix-like systems
-- **File Processing**: Automatically detect and include text/binary files in queries
+- **Enhanced Directory Processing**: Smart directory scanning with configurable patterns
+- **Advanced File Processing**: Automatically detect and include text/binary files with validation
+- **Request Validation**: Intelligent limits and warnings to prevent large token usage
 - **Smart Argument Parsing**: Handle quoted strings, file paths, and special parameters
-- **Interactive Mode**: Confirm requests before sending
-- **Dry Run Mode**: Preview requests without sending them
+- **Interactive Mode**: Confirm requests before sending with detailed validation
+- **Dry Run Mode**: Preview requests with validation results
 - **Streaming Responses**: Real-time response display
-- **Configurable**: Easy configuration via config file or environment variables
+- **Configurable**: Comprehensive configuration via YAML file or environment variables
 
 ## Installation
 
@@ -50,350 +52,306 @@ pip install doq
    pip install -e .
    ```
 
-2. **Set up API keys** (choose one method):
-   
-   **Environment Variables**:
+2. **Set your API key**:
    ```bash
-   # Windows PowerShell
-   $env:ANTHROPIC_API_KEY="your-claude-key"
-   $env:OPENAI_API_KEY="your-openai-key"
-   $env:DEEPSEEK_API_KEY="your-deepseek-key"
-   
-   # Unix/Linux/macOS
-   export ANTHROPIC_API_KEY="your-claude-key"
-   export OPENAI_API_KEY="your-openai-key"
-   export DEEPSEEK_API_KEY="your-deepseek-key"
-   ```
-   
-   **Config File**: Edit `~/.doq-config.yaml`:
-   ```yaml
-   default_provider: claude
-   providers:
-     claude:
-       api_key: "your-claude-key"
-       model: "claude-3-sonnet-20240229"
-     openai:
-       api_key: "your-openai-key"
-       model: "gpt-4"
-     deepseek:
-       api_key: "your-deepseek-key"
-       model: "deepseek-chat"
+   export ANTHROPIC_API_KEY="your-api-key"
+   # or
+   export OPENAI_API_KEY="your-api-key"
+   # or
+   export DEEPSEEK_API_KEY="your-api-key"
    ```
 
-3. **Start using**:
+3. **Basic usage**:
    ```bash
-   doq "Explain what this code does" script.py
+   doq "What is machine learning?"
+   doq explain script.py
+   doq "Review this code" main.py utils.py
    ```
 
-## Usage
+## Usage Examples
 
-### Basic Usage
+### Basic Queries
 
 ```bash
-# Simple query (works with Unicode/Cyrillic on all platforms)
-doq "What is the capital of France?"
-doq "Что такое машинное обучение?"
-
-# Simple queries without quotes (for single words)
+# Simple queries (no quotes needed for single words)
 doq help
-doq explain
-doq summarize
-
-# Include files in query
-doq "Review this code" main.py utils.py
-doq analyze main.py utils.py
-
-# Use specific provider
-doq --llm=openai "Explain this function" function.py
-doq --llm=openai explain function.py
-
-# Interactive mode (confirm before sending)
-doq -i "Analyze this data" data.csv
-doq -i analyze data.csv
-
-# Dry run (preview without sending)
-doq --dry-run "Test query" file.txt
-doq --dry-run test file.txt
-```
-
-### Advanced Features
-
-#### Quoted Strings and Command Syntax
-
-**When to use quotes:**
-```bash
-# Multi-word queries require quotes
-doq "This is a single query with spaces" additional args
-
-# Queries with special characters
-doq "Say \"hello world\" in Python"
-doq "What's the difference between == and === ?"
-```
-
-**When quotes are optional:**
-```bash
-# Single words don't need quotes
-doq help
-doq explain script.py
+doq explain file.py
 doq summarize document.txt
 
-# Simple commands with files
-doq analyze data.csv
-doq review code.py
-doq debug error.log
+# Multi-word queries (use quotes)
+doq "What is artificial intelligence?"
+doq "Explain how this algorithm works" algorithm.py
 ```
 
-**Escaped quotes:**
+### Directory Processing
+
 ```bash
-doq "Say \"hello world\" in Python"
+# Current directory (non-recursive)
+doq "Review project structure" .
+doq analyze ./
+
+# Recursive directory scanning
+doq "Analyze all Python files" ./**
+doq "Review entire project" ./**
+
+# Specific directories
+doq "Check source code" ./src
+doq "Review source files" ./src/*
+doq "Deep analysis of src" ./src/**
+
+# Named directories
+doq "Analyze data processing" data/
+doq "Review all data files" data/*
+doq "Deep scan of data directory" data/**
 ```
 
-#### File Handling
+### File Processing
+
 ```bash
-# Text files are automatically included with headers
-doq "Explain this code" script.py
-# Adds: ### ./script.py ###\n<file content>
+# Single files
+doq "Explain this function" main.py
+doq "What does this script do?" script.py
 
-# Binary files in hex format
-doq "Analyze this binary" data.bin
+# Multiple files
+doq "Review these modules" main.py utils.py config.py
+doq "Compare implementations" old_version.py new_version.py
 
-# Large files prompt for confirmation
-doq "Process this" large_file.txt
-# Prompts: File large_file.txt is large (15.2MB). Include it? (y/N):
+# Mixed files and directories
+doq "Analyze project" main.py ./src/* ./tests/
 ```
 
-#### Provider-Specific Features
+### Provider Selection
 
-**Claude (supports file uploads)**:
 ```bash
-doq --llm=claude "Review these files" *.py
-# Files are sent as attachments when possible
+# Choose specific LLM provider
+doq --llm=claude "Explain quantum computing"
+doq --llm=openai "What does this code do?" script.py
+doq --llm=deepseek "Analyze this data" data.json
 ```
 
-**OpenAI & DeepSeek**:
+### Interactive Mode
+
 ```bash
-doq --llm=openai "Analyze this" file.txt
-# File content is embedded in the text query
+# Confirm before sending (especially useful for large requests)
+doq -i "Review my entire codebase" ./**
+doq -i "Analyze all Python files" ./src/**
+```
+
+### Dry Run Mode
+
+```bash
+# Preview request without sending
+doq --dry-run "Test query" file.txt
+doq --dry-run "Analyze project" ./**
+doq --dry-run explain script.py
+```
+
+### International Support
+
+```bash
+# Unicode and international text fully supported
+doq "Что такое машинное обучение?"      # Russian
+doq "解释人工智能的基本概念"              # Chinese
+doq "اشرح مفهوم الذكاء الاصطناعي"        # Arabic
+```
+
+## Directory Patterns
+
+DOQ supports flexible directory patterns for scanning files:
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| `.` | Current directory (non-recursive) | `doq analyze .` |
+| `./` | Current directory (non-recursive) | `doq review ./` |
+| `./*` | Current directory files | `doq check ./*` |
+| `./**` | Current directory recursive | `doq scan ./**` |
+| `./src` | Specific subdirectory | `doq analyze ./src` |
+| `./src/*` | Files in subdirectory | `doq review ./src/*` |
+| `./src/**` | Subdirectory recursive | `doq scan ./src/**` |
+| `src/` | Directory by name | `doq analyze src/` |
+| `src/*` | Files in named directory | `doq review src/*` |
+| `src/**` | Named directory recursive | `doq scan src/**` |
+
+## Request Validation
+
+DOQ includes intelligent validation to prevent excessive token usage and costs:
+
+### Default Limits
+- **Files**: Maximum 5 files (configurable)
+- **Text files**: Maximum 1,000 lines per file
+- **Binary files**: Maximum 5KB per file
+- **Total size**: Maximum 10MB per request
+- **Directory depth**: Maximum 5 levels of recursion
+
+### Validation Features
+- **Token estimation**: Approximate token count and cost estimation
+- **File type analysis**: Smart detection of redundant or test files
+- **Directory structure analysis**: Warnings for scattered or deep structures
+- **Query optimization**: Suggestions for vague or overly broad queries
+- **Interactive confirmation**: Detailed validation results in interactive mode
+
+### Configuration
+
+Create `~/.doq-config.yaml` to customize limits:
+
+```yaml
+validation:
+  max_files: 10
+  max_text_lines: 2000
+  max_binary_size_kb: 10
+  max_total_size_mb: 20
+  max_directory_depth: 8
+  
+cost_control:
+  warn_token_threshold: 50000
+  block_token_threshold: 150000
+  show_cost_estimates: true
 ```
 
 ## Command Line Options
 
-| Option | Description | Example |
-|--------|-------------|---------|
-| `-i` | Interactive mode - confirm before sending | `doq -i "query"` |
-| `--llm=PROVIDER` | Choose provider (claude/openai/deepseek) | `doq --llm=openai "query"` |
-| `--dry-run` | Show request details without sending | `doq --dry-run "query"` |
+```bash
+doq [OPTIONS] <query> [files...]
+```
+
+### Options
+
+- `-h, --help`: Show detailed help with examples
+- `-i`: Interactive mode (confirm before sending)
+- `--llm=PROVIDER`: Choose LLM provider (claude, openai, deepseek)
+- `--dry-run`: Show request details without sending
+
+### Examples with Options
+
+```bash
+# Get help
+doq --help
+
+# Interactive mode with validation
+doq -i "Review all my code" ./**
+
+# Dry run to preview request
+doq --dry-run "Analyze project structure" .
+
+# Specific provider
+doq --llm=openai "Explain this algorithm" algorithm.py
+
+# Combined options
+doq -i --llm=claude --dry-run "Large analysis" ./**
+```
 
 ## Configuration
 
-### Config File Location
-- **Linux/Mac**: `~/.doq-config.yaml`
-- **Windows**: `C:\Users\{username}\.doq-config.yaml`
+### Environment Variables
 
-### Default Configuration
+Set your API keys:
+
+```bash
+export ANTHROPIC_API_KEY="your-anthropic-key"
+export OPENAI_API_KEY="your-openai-key"
+export DEEPSEEK_API_KEY="your-deepseek-key"
+```
+
+### Configuration File
+
+Create `~/.doq-config.yaml`:
+
 ```yaml
+# Default provider
 default_provider: claude
+
+# Provider settings
 providers:
   claude:
-    api_key: null
     model: "claude-3-sonnet-20240229"
     max_tokens: 4096
   openai:
-    api_key: null
     model: "gpt-4"
     max_tokens: 4096
   deepseek:
-    api_key: null
-    base_url: "https://api.deepseek.com/v1"
     model: "deepseek-chat"
     max_tokens: 4096
+
+# Validation limits
+validation:
+  max_files: 10
+  max_text_lines: 2000
+  max_binary_size_kb: 10
+  max_total_size_mb: 20
+  max_directory_depth: 8
+
+# Patterns to ignore during directory scanning
+  ignore_patterns:
+    - "__pycache__"
+    - ".git"
+    - "node_modules"
+    - ".venv"
+    - "*.pyc"
+    - "*.log"
+    - "build"
+    - "dist"
 ```
 
-### Environment Variables
-- `ANTHROPIC_API_KEY` - Claude API key
-- `OPENAI_API_KEY` - OpenAI API key  
-- `DEEPSEEK_API_KEY` - DeepSeek API key
+## Advanced Usage
 
-Environment variables take precedence over config file values.
+### Token Optimization
 
-## Examples
+For large projects, use these strategies to reduce token usage:
 
-### Code Review
-```bash
-doq "Please review this Python code for best practices" main.py utils.py
-# Or without quotes for simple commands
-doq review main.py utils.py
-```
+1. **Start specific**: Begin with specific files rather than entire directories
+2. **Use dry-run**: Preview requests with `--dry-run` to see what will be included
+3. **Focus queries**: Ask specific questions rather than broad "analyze" requests
+4. **Exclude irrelevant files**: Configure ignore patterns to skip tests, docs, logs
+5. **Use interactive mode**: Review validation results before sending
 
-### Data Analysis
-```bash
-doq "Analyze this CSV data and provide insights" data.csv
-# Simplified version
-doq analyze data.csv
-```
+### Best Practices
 
-### Simple Commands Without Quotes
-```bash
-# Basic file operations
-doq explain script.py
-doq summarize document.txt
-doq debug error.log
-doq optimize code.py
-doq translate text.txt
+1. **Directory scanning**: Start with `.` (current directory) before using `./**` (recursive)
+2. **File selection**: Use specific file patterns when possible
+3. **Query focus**: Be specific about what you want to know
+4. **Validation**: Pay attention to warnings about file count and token usage
+5. **Configuration**: Customize limits based on your typical usage patterns
 
-# Quick help and information
-doq help
-doq version
-doq status
-```
+### Performance Tips
 
-### Multi-Provider Comparison
-```bash
-doq --llm=claude "Explain quantum computing" > claude_response.txt
-doq --llm=openai "Explain quantum computing" > openai_response.txt
-doq --llm=deepseek "Explain quantum computing" > deepseek_response.txt
+- Use `--dry-run` to preview large requests
+- Configure appropriate limits in `~/.doq-config.yaml`
+- Use interactive mode (`-i`) for requests with many files
+- Monitor token estimates to optimize future requests
+- Exclude unnecessary files with ignore patterns
 
-# Or with simple commands
-doq --llm=claude explain quantum.txt > claude_response.txt
-doq --llm=openai explain quantum.txt > openai_response.txt
-doq --llm=deepseek explain quantum.txt > deepseek_response.txt
-```
+## Troubleshooting
 
-### Interactive Workflow
-```bash
-doq -i "Help me debug this error" error.log traceback.txt
-# Shows preview, asks for confirmation
-# Streams response in real-time
-```
+### Common Issues
 
-### Binary File Analysis
-```bash
-doq "What type of file is this?" unknown_file.bin
-# Automatically detects binary, converts to hex
-# For large files, offers truncation options
-```
+1. **Unicode issues on Windows**: Use PowerShell instead of Command Prompt
+2. **Large token usage**: Use `--dry-run` to preview and reduce file count
+3. **Too many files**: Configure higher limits or use more specific patterns
+4. **Permission errors**: Ensure you have read access to directories
+5. **API key errors**: Verify environment variables are set correctly
 
-## File Processing Details
+### Debug Information
 
-### Text Files
-- Automatically detected and included with headers
-- Format: `### ./filename.ext ###\n<content>`
-- Large files (>10MB) prompt for confirmation
+Use `--dry-run` to see:
+- Files that will be included
+- Validation warnings and errors
+- Token estimates
+- Request structure
 
-### Binary Files
-- Converted to hexadecimal representation
-- Format: `### ./filename.bin (binary, 1024 bytes) ###\n<hex_data>`
-- Large binary files offer truncation option
-- Truncated format: `<first_1KB_hex>...{total_bytes}...{last_1KB_hex}`
+## Contributing
 
-### Provider File Support
-- **Claude**: Supports direct file uploads (when available)
-- **OpenAI/DeepSeek**: Files embedded in text query
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
 
-## Unicode and International Support
+## License
 
-DOQ provides native Unicode support across all platforms, allowing you to use queries in any language including Cyrillic, Chinese, Arabic, and other non-Latin scripts.
+[Add license information]
 
-### Examples with International Text
+## Support
 
-```bash
-# Russian/Cyrillic
-doq "Объясни принципы машинного обучения"
-
-# Chinese
-doq "解释人工智能的基本概念"
-
-# Arabic  
-doq "اشرح مفهوم الذكاء الاصطناعي"
-
-# Mixed languages
-doq "Compare ML algorithms: что лучше - нейронные сети или деревья решений?"
-```
-
-### Platform-Specific Unicode Handling
-
-**Windows**:
-- Uses PowerShell's native Unicode support
-- Automatically configures console encoding to UTF-8
-- Handles Cyrillic and other non-ASCII characters correctly
-
-**Unix/Linux/macOS**:
-- Leverages system's native UTF-8 support
-- No additional configuration needed
-- Works seamlessly with international input methods
-
-## Error Handling
-
-The CLI handles various error scenarios gracefully:
-
-- **Missing API keys**: Clear error message with setup instructions
-- **Network errors**: Informative error messages
-- **File access errors**: Skip problematic files with warnings
-- **Keyboard interrupts**: Clean exit with status code 130
-- **Invalid providers**: List of available providers
-
-## Development
-
-### Setting Up Development Environment
-
-```bash
-git clone <repository-url>
-cd doq
-pip install -e ".[dev]"
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=doq
-
-# Run specific test file
-pytest tests/test_parser.py
-```
-
-### Project Structure
-
-```
-doq/
-├── doq/
-│   ├── __init__.py
-│   ├── __main__.py          # Simple module entry point
-│   ├── main.py              # Simplified CLI entry point
-│   ├── parser.py            # Argument parsing logic
-│   └── providers/
-│       ├── __init__.py      # Provider factory and base classes
-│       ├── claude.py        # Claude/Anthropic provider
-│       ├── openai.py        # OpenAI provider
-│       └── deepseek.py      # DeepSeek provider
-├── scripts/
-│   ├── doq.ps1              # Windows PowerShell script with Unicode support
-│   └── doq_unix             # Unix/Linux/macOS simple script
-├── tests/
-│   ├── __init__.py
-│   ├── test_main.py         # CLI tests
-│   ├── test_parser.py       # Parser tests
-│   └── test_providers.py    # Provider tests
-├── setup.py                 # Platform-aware package configuration
-└── README.md               # This file
-```
-
-### Platform-Specific Implementation
-
-**Windows (`scripts/doq.ps1`)**:
-- PowerShell script with native Unicode/UTF-8 handling
-- Proper console encoding setup for Cyrillic and other non-ASCII characters
-- Seamless integration with Windows PowerShell environment
-
-**Unix/Linux/macOS (`scripts/doq_unix`)**:
-- Simple Python script without complex Unicode handling
-- Relies on system's native UTF-8 support
-- Lightweight implementation for Unix-like systems
-
-**Installation Process**:
-- `setup.py` automatically detects the platform during installation
-- Installs the appropriate script for the target platform
-- Creates unified `doq` command that works correctly on all systems
+For issues and questions:
+- GitHub Issues: [repository-url]/issues
+- Documentation: [repository-url]/docs

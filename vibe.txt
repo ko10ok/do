@@ -35,3 +35,28 @@
 
 Результат запроса от api llm выводится в stdout в качестве ответа.
 Предусмотри как интерактивный режим - как только часть ответа будет доступна, то сразу же вывести ее пользователю.
+
+
+--------------
+
+
+add directory handling by single param . or ./directory or ./* ./**
+
+recurcively append all files in sub directories to request.
+
+add files count > 5, files size > 1000 lines of text or binary files more than 5kb warning with input to continue request. Make this params able to set via config file.
+
+add separate stage to check this in between parsing and llm request.
+add dedicated class with this kind of checks.
+
+suggess another helpfull checks for not to consume a lot of llm tokens with huge requests.
+
+print tree as section for directory in Final query text: in order of text like:
+doq analyse project .
+Final query text:
+doq analyse project
+c:\Users...
+└── 📁 C:/ └── 📁 Users/ ....
+
+include files to request in directory only if * in directory pattern, like in patterns ./* or ./** ./*.py
+show directories recursively too
