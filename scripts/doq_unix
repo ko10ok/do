@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+"""Simple doq executable for Unix-like systems."""
+
+import os
+import sys
+
+
+def main():
+    """Main entry point."""
+    # Add package to path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    package_dir = os.path.dirname(script_dir)
+    if package_dir not in sys.path:
+        sys.path.insert(0, package_dir)
+
+    # Import and run
+    from doq.main import main as doq_main
+    return doq_main(sys.argv[1:])
+
+if __name__ == "__main__":
+    sys.exit(main())

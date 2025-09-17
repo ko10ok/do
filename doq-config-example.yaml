@@ -1,0 +1,118 @@
+# DOQ Configuration File
+# Save this as ~/.doq-config.yaml
+
+# Default LLM provider
+default_provider: claude
+
+# Provider configurations
+providers:
+  claude:
+    api_key: null  # Set via ANTHROPIC_API_KEY environment variable
+    model: "claude-3-sonnet-20240229"
+    max_tokens: 4096
+  openai:
+    api_key: null  # Set via OPENAI_API_KEY environment variable
+    model: "gpt-4"
+    max_tokens: 4096
+  deepseek:
+    api_key: null  # Set via DEEPSEEK_API_KEY environment variable
+    base_url: "https://api.deepseek.com/v1"
+    model: "deepseek-chat"
+    max_tokens: 4096
+
+# Enhanced request validation limits
+validation:
+  # Maximum number of files to include
+  max_files: 10
+
+  # Maximum lines in text files
+  max_text_lines: 2000
+
+  # Maximum size for binary files (KB)
+  max_binary_size_kb: 10
+
+  # Maximum total request size (MB)
+  max_total_size_mb: 20
+
+  # Maximum directory recursion depth
+  max_directory_depth: 8
+
+  # Whether to warn about large directories
+  warn_large_directories: true
+
+  # Automatically skip common ignore patterns
+  auto_skip_common_ignores: true
+
+  # Additional patterns to ignore (gitignore-style)
+  ignore_patterns:
+    - "__pycache__"
+    - ".git"
+    - ".svn"
+    - ".hg"
+    - "node_modules"
+    - ".venv"
+    - "venv"
+    - ".env"
+    - "*.pyc"
+    - "*.pyo"
+    - "*.pyd"
+    - ".DS_Store"
+    - "Thumbs.db"
+    - "*.log"
+    - "*.tmp"
+    - "*.temp"
+    - ".pytest_cache"
+    - ".coverage"
+    - "*.egg-info"
+    - ".idea"
+    - ".vscode"
+    - "build"
+    - "dist"
+    - "target"
+    - ".tox"
+    - ".mypy_cache"
+
+# Directory scanning preferences
+directory_scanning:
+  # Include hidden files starting with . (except git, cache dirs)
+  include_hidden: false
+
+  # Follow symbolic links
+  follow_symlinks: false
+
+  # File extensions to prioritize for analysis
+  priority_extensions:
+    - ".py"
+    - ".js"
+    - ".ts"
+    - ".java"
+    - ".cpp"
+    - ".c"
+    - ".h"
+    - ".go"
+    - ".rs"
+    - ".php"
+    - ".rb"
+    - ".swift"
+    - ".kt"
+    - ".scala"
+    - ".md"
+    - ".txt"
+    - ".yaml"
+    - ".yml"
+    - ".json"
+    - ".xml"
+    - ".html"
+    - ".css"
+    - ".sql"
+
+# Token estimation and cost control
+cost_control:
+  # Warn when estimated tokens exceed this threshold
+  warn_token_threshold: 50000
+
+  # Block requests when estimated tokens exceed this threshold
+  block_token_threshold: 150000
+
+  # Show estimated cost information
+  show_cost_estimates: true
