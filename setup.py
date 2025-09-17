@@ -85,4 +85,7 @@ setup(
     ],
     keywords="llm ai cli claude chatgpt deepseek anthropic openai",
     license="Apache-2.0",
+    package_data={
+        'uber_compose': ['version'],
+    },
 )
