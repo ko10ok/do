@@ -43,7 +43,7 @@ def get_platform_entry_points():
         }
 
 setup(
-    name="doq",
+    name="do",
     version=get_version(),
     description="A command-line interface for various LLM providers (Claude, ChatGPT, DeepSeek)",
     long_description=read_readme(),
