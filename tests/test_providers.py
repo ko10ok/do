@@ -1,10 +1,10 @@
 """Unit tests for LLM providers."""
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from doq.parser import FileInfo, RequestStructure
+from doq.parser import RequestStructure
 from doq.providers import ConfigManager, LLMProvider, ProviderFactory
 
 
@@ -86,8 +86,8 @@ class TestProviderFactory:
         mock_claude.return_value = mock_instance
 
         with patch.object(self.factory.config_manager, 'get_provider_config',
-                         return_value={"api_key": "test-key"}):
-            provider = self.factory.create_provider("claude")
+                          return_value={"api_key": "test-key"}):
+            self.factory.create_provider("claude")
 
         mock_claude.assert_called_once_with({"api_key": "test-key"})
 
@@ -98,8 +98,8 @@ class TestProviderFactory:
         mock_openai.return_value = mock_instance
 
         with patch.object(self.factory.config_manager, 'get_provider_config',
-                         return_value={"api_key": "test-key"}):
-            provider = self.factory.create_provider("openai")
+                          return_value={"api_key": "test-key"}):
+            self.factory.create_provider("openai")
 
         mock_openai.assert_called_once_with({"api_key": "test-key"})
 
@@ -110,8 +110,8 @@ class TestProviderFactory:
         mock_deepseek.return_value = mock_instance
 
         with patch.object(self.factory.config_manager, 'get_provider_config',
-                         return_value={"api_key": "test-key"}):
-            provider = self.factory.create_provider("deepseek")
+                          return_value={"api_key": "test-key"}):
+            self.factory.create_provider("deepseek")
 
         mock_deepseek.assert_called_once_with({"api_key": "test-key"})
 

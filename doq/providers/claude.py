@@ -1,6 +1,5 @@
 """Claude provider implementation."""
 
-import sys
 from typing import Any, Dict, Iterator
 
 from ..parser import RequestStructure
@@ -9,7 +8,7 @@ from ..providers import LLMProvider
 try:
     import anthropic
 except ImportError:
-    anthropic = None
+    anthropic = None  # type: ignore
 
 
 class ClaudeProvider(LLMProvider):

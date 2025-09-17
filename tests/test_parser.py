@@ -1,6 +1,5 @@
 """Unit tests for argument parser module."""
 
-import os
 import tempfile
 from pathlib import Path
 from unittest.mock import mock_open, patch
@@ -209,7 +208,8 @@ class TestArgumentParser:
     @patch('doq.parser.Path.stat')
     @patch('doq.parser.Path.is_file')
     @patch('doq.parser.Path.exists')
-    def test_large_file_acceptance(self, mock_exists, mock_is_file, mock_stat, mock_input, mock_open_file, mock_is_binary):
+    def test_large_file_acceptance(self, mock_exists, mock_is_file, mock_stat, mock_input, mock_open_file,
+                                   mock_is_binary):
         """Test accepting large files."""
         # Create a proper mock stat object with st_mode for is_dir() calls
         import stat
@@ -258,11 +258,10 @@ class TestArgumentParser:
         })()
 
         with patch('doq.parser.Path.exists', return_value=True), \
-             patch('doq.parser.Path.is_file', return_value=True), \
-             patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
-             patch('doq.parser.ArgumentParser._is_binary_file', return_value=False), \
-             patch('doq.parser.ArgumentParser._is_directory_pattern', return_value=False):
-
+                patch('doq.parser.Path.is_file', return_value=True), \
+                patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
+                patch('doq.parser.ArgumentParser._is_binary_file', return_value=False), \
+                patch('doq.parser.ArgumentParser._is_directory_pattern', return_value=False):
             with patch('doq.parser.ArgumentParser._is_file_path') as mock_is_file_path:
                 def is_file_path_side_effect(arg):
                     return arg == "test.txt"
@@ -286,12 +285,11 @@ class TestArgumentParser:
         })()
 
         with patch('doq.parser.Path.exists', return_value=True), \
-             patch('doq.parser.Path.is_file', return_value=True), \
-             patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
-             patch('builtins.open', new_callable=mock_open, read_data="file content"), \
-             patch('doq.parser.ArgumentParser._is_binary_file', return_value=False), \
-             patch('doq.parser.ArgumentParser._is_directory_pattern', return_value=False):
-
+                patch('doq.parser.Path.is_file', return_value=True), \
+                patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
+                patch('builtins.open', new_callable=mock_open, read_data="file content"), \
+                patch('doq.parser.ArgumentParser._is_binary_file', return_value=False), \
+                patch('doq.parser.ArgumentParser._is_directory_pattern', return_value=False):
             with patch('doq.parser.ArgumentParser._is_file_path') as mock_is_file_path:
                 def is_file_path_side_effect(arg):
                     return arg == "test.txt"
@@ -330,11 +328,11 @@ class TestArgumentParser:
         })()
 
         with patch('doq.parser.Path.exists') as mock_exists, \
-             patch('doq.parser.Path.is_file') as mock_is_file, \
-             patch('doq.parser.Path.is_dir') as mock_is_dir, \
-             patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
-             patch('builtins.open', new_callable=mock_open, read_data="# Python code\nprint('Hello')"), \
-             patch('doq.parser.ArgumentParser._is_binary_file', return_value=False):
+                patch('doq.parser.Path.is_file') as mock_is_file, \
+                patch('doq.parser.Path.is_dir') as mock_is_dir, \
+                patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
+                patch('builtins.open', new_callable=mock_open, read_data="# Python code\nprint('Hello')"), \
+                patch('doq.parser.ArgumentParser._is_binary_file', return_value=False):
 
             # Setup proper side effects for path checking
             def exists_side_effect(path_obj=None):
@@ -426,7 +424,7 @@ class TestArgumentParser:
         result = self.parser.parse_args(args)
 
         expected_text = ("проанализируй данный код Python и предложи улучшения "
-                        "для повышения производительности и читаемости кода")
+                         "для повышения производительности и читаемости кода")
         assert result.text_query == expected_text
         assert len(result.files) == 0
 
@@ -440,13 +438,12 @@ class TestArgumentParser:
         })()
 
         with patch('doq.parser.Path.exists', return_value=True), \
-             patch('doq.parser.Path.is_file', return_value=True), \
-             patch('doq.parser.Path.is_dir', return_value=False), \
-             patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
-             patch('builtins.open', new_callable=mock_open, read_data="# Code content"), \
-             patch('doq.parser.ArgumentParser._is_binary_file', return_value=False), \
-             patch('doq.parser.ArgumentParser._is_directory_pattern', return_value=False):
-
+                patch('doq.parser.Path.is_file', return_value=True), \
+                patch('doq.parser.Path.is_dir', return_value=False), \
+                patch('doq.parser.Path.stat', return_value=mock_stat_obj), \
+                patch('builtins.open', new_callable=mock_open, read_data="# Code content"), \
+                patch('doq.parser.ArgumentParser._is_binary_file', return_value=False), \
+                patch('doq.parser.ArgumentParser._is_directory_pattern', return_value=False):
             # Mock _is_file_path to return True only for .py and .js files
             with patch('doq.parser.ArgumentParser._is_file_path') as mock_is_file_path:
                 def is_file_path_side_effect(arg):
@@ -709,6 +706,7 @@ class TestArgumentParser:
             with patch('doq.parser.ArgumentParser._is_directory_pattern') as mock_is_dir:
                 def mock_is_dir_func(arg):
                     return arg in [".", "./", "./*", "./**", "./src", "src/"]
+
                 mock_is_dir.side_effect = mock_is_dir_func
 
                 parser = ArgumentParser()
@@ -783,7 +781,6 @@ class TestArgumentParser:
                 with patch('doq.parser.ArgumentParser._is_directory_pattern') as mock_is_dir:
                     with patch('doq.parser.ArgumentParser._process_file') as mock_process_file:
                         with patch('doq.parser.ArgumentParser._scan_directory') as mock_scan:
-
                             # Setup mocks
                             def is_file_side_effect(arg):
                                 return arg == "standalone.py"
@@ -816,6 +813,7 @@ class TestArgumentParser:
 
                             # Should include both individual file and directory files
                             assert len(result.files) == 2
+
 
 class TestFileInfo:
     """Test cases for FileInfo dataclass."""

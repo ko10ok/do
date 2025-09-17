@@ -1,8 +1,7 @@
 """Unit tests for main CLI module."""
 
-import sys
 from io import StringIO
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -36,7 +35,7 @@ class TestMainFunction:
         mock_factory.return_value = mock_factory_instance
 
         # Test
-        with patch('sys.stdout', new=StringIO()) as mock_stdout:
+        with patch('sys.stdout', new=StringIO()):
             result = main(["test", "query"])
 
         assert result == 0

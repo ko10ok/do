@@ -1,19 +1,17 @@
 """Main CLI module for DOQ."""
 
 import sys
-from typing import List
+from typing import List, Optional
 
 from .parser import ArgumentParser
 from .providers import ProviderFactory
-from .validator import (ValidationLimits, create_validator_from_config,
-                        suggest_optimization_tips)
+from .validator import create_validator_from_config, suggest_optimization_tips
 
 
 def print_default_config():
     """Print default configuration in YAML format from example file."""
     try:
         # Get the path to the config example file
-        import os
         from pathlib import Path
 
         # Get the package directory
@@ -57,6 +55,7 @@ validation:
   max_binary_size_kb: 5
   max_total_size_mb: 10
 """)
+
 
 def print_help():
     """Print comprehensive help information with examples."""
@@ -171,6 +170,7 @@ def print_help():
     print()
     print("For more information, visit: https://github.com/ko10ok/do")
 
+
 def print_dry_run_info(request_structure, validation_result=None):
     """Print detailed information about the request in dry-run mode."""
     print("=" * 60)
@@ -203,9 +203,12 @@ def print_dry_run_info(request_structure, validation_result=None):
             for error in validation_result.errors:
                 print(f"  • {error}")
 
-        print(f"\n📊 Summary:")
-        print(f"  • Files: {validation_result.file_count} ({validation_result.text_files} text, {validation_result.binary_files} binary)")
-        print(f"  • Total size: {validation_result.total_size_bytes / (1024*1024):.1f}MB")
+        print("\n📊 Summary:")
+        print(
+            f"  • Files: {validation_result.file_count}"
+            f" ({validation_result.text_files} text, {validation_result.binary_files} binary)"
+        )
+        print(f"  • Total size: {validation_result.total_size_bytes / (1024 * 1024):.1f}MB")
         print()
 
     print("Raw arguments:")
@@ -235,9 +238,9 @@ def _has_directory_patterns(raw_args):
 
         # Check for patterns like ./src, ./src/*, ./src/**, src/, src/*, src/**
         if (arg.startswith("./") or
-            arg.endswith("/") or
-            arg.endswith("/*") or
-            arg.endswith("/**")):
+                arg.endswith("/") or
+                arg.endswith("/*") or
+                arg.endswith("/**")):
             return True
 
         # Check if it's a plain directory path
@@ -254,7 +257,6 @@ def _has_directory_patterns(raw_args):
 
 def _generate_directory_tree(files):
     """Generate a visual directory tree from the list of files."""
-    import os
     from pathlib import Path
 
     if not files:
@@ -315,12 +317,12 @@ def _format_file_size(size_bytes):
     if size_bytes < 1024:
         return f"{size_bytes}B"
     elif size_bytes < 1024 * 1024:
-        return f"{size_bytes/1024:.1f}KB"
+        return f"{size_bytes / 1024:.1f}KB"
     else:
-        return f"{size_bytes/(1024*1024):.1f}MB"
+        return f"{size_bytes / (1024 * 1024):.1f}MB"
 
 
-def main(args: List[str] = None):
+def main(args: Optional[List[str]] = None):
     """Main entry point for DOQ CLI."""
     # Use provided args or get from sys.argv
     if args is None:
@@ -402,9 +404,10 @@ def main(args: List[str] = None):
                 for warning in validation_result.warnings:
                     print(f"  • {warning}")
 
-            print(f"\n📊 Request summary:")
-            print(f"  • Files: {validation_result.file_count} ({validation_result.text_files} text, {validation_result.binary_files} binary)")
-            print(f"  • Total size: {validation_result.total_size_bytes / (1024*1024):.1f}MB")
+            print("\n📊 Request summary:")
+            print(f"  • Files: {validation_result.file_count} "
+                  f"({validation_result.text_files} text, {validation_result.binary_files} binary)")
+            print(f"  • Total size: {validation_result.total_size_bytes / (1024 * 1024):.1f}MB")
 
             response = input("\nDo you want to proceed? (y/N): ")
             if not response.lower().startswith('y'):
@@ -416,9 +419,10 @@ def main(args: List[str] = None):
             for warning in validation_result.warnings:
                 print(f"  • {warning}")
 
-            print(f"\n📊 Request summary:")
-            print(f"  • Files: {validation_result.file_count} ({validation_result.text_files} text, {validation_result.binary_files} binary)")
-            print(f"  • Total size: {validation_result.total_size_bytes / (1024*1024):.1f}MB")
+            print("\n📊 Request summary:")
+            print(f"  • Files: {validation_result.file_count} "
+                  f"({validation_result.text_files} text, {validation_result.binary_files} binary)")
+            print(f"  • Total size: {validation_result.total_size_bytes / (1024 * 1024):.1f}MB")
 
             response = input("\nDo you want to proceed? (y/N): ")
             if not response.lower().startswith('y'):

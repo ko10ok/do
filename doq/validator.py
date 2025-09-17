@@ -4,7 +4,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 import yaml
 
@@ -176,9 +176,9 @@ class RequestValidator:
         for warning in result.warnings:
             print(f"  • {warning}")
 
-        print(f"\n📊 Request summary:")
+        print("\n📊 Request summary:")
         print(f"  • Files: {result.file_count} ({result.text_files} text, {result.binary_files} binary)")
-        print(f"  • Total size: {result.total_size_bytes / (1024*1024):.1f}MB")
+        print(f"  • Total size: {result.total_size_bytes / (1024 * 1024):.1f}MB")
 
         response = input("\nDo you want to proceed? (y/N): ")
         return response.lower().startswith('y')
@@ -227,7 +227,7 @@ class EnhancedRequestValidator(RequestValidator):
         super().__init__(limits)
 
     def validate_request_enhanced(self, files: List, text_query: str,
-                                 interactive: bool = False) -> ValidationResult:
+                                  interactive: bool = False) -> ValidationResult:
         """Enhanced validation with additional checks and user interaction."""
         warnings = []
         errors = []
@@ -317,19 +317,23 @@ class EnhancedRequestValidator(RequestValidator):
         # Check for deep nested structures
         max_depth = max(len(Path(f.path).parts) for f in files)
         if max_depth > 8:
-            warnings.append(f"Deep directory nesting detected (depth: {max_depth}). Consider focusing on specific areas.")
+            warnings.append(
+                f"Deep directory nesting detected (depth: {max_depth}). Consider focusing on specific areas.")
 
         # Check for scattered files across many directories
         directories = set(str(Path(f.path).parent) for f in files)
         if len(directories) > 15:
-            warnings.append(f"Files scattered across many directories ({len(directories)}). Consider organizing by area of interest.")
+            warnings.append(
+                f"Files scattered across many directories ({len(directories)}). "
+                f"Consider organizing by area of interest."
+            )
 
     def _interactive_validation(self, result: ValidationResult, warnings: List[str],
-                               errors: List[str]) -> bool:
+                                errors: List[str]) -> bool:
         """Interactive validation with user confirmation."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🔍 REQUEST VALIDATION RESULTS")
-        print("="*60)
+        print("=" * 60)
 
         if errors:
             print("❌ ERRORS (Request cannot proceed):")
@@ -347,13 +351,16 @@ class EnhancedRequestValidator(RequestValidator):
         # Show summary
         print("📊 REQUEST SUMMARY:")
         print(f"  • Files: {result.file_count} ({result.text_files} text, {result.binary_files} binary)")
-        print(f"  • Total size: {result.total_size_bytes / (1024*1024):.1f}MB")
+        print(f"  • Total size: {result.total_size_bytes / (1024 * 1024):.1f}MB")
 
         # Estimate cost/tokens
         estimated_tokens = self._estimate_tokens("", [])  # Will be calculated properly
         if estimated_tokens > 10000:
             print(f"  • Estimated tokens: ~{estimated_tokens:,}")
-            print(f"  • Estimated cost: $0.{estimated_tokens//1000:02d} - $0.{estimated_tokens//500:02d} (rough estimate)")
+            print(
+                f"  • Estimated cost: $0.{estimated_tokens // 1000:02d} - $0.{estimated_tokens // 500:02d} "
+                f"(rough estimate)"
+            )
 
         print()
         print("OPTIONS:")
@@ -378,7 +385,6 @@ class EnhancedRequestValidator(RequestValidator):
             else:
                 print("Please choose y, n, t, or f")
 
-
     def _show_file_list(self, result: ValidationResult):
         """Show detailed file list for user review."""
         print("📁 FILES TO BE INCLUDED:")
@@ -395,7 +401,7 @@ class EnhancedRequestValidator(RequestValidator):
         for directory, files in sorted(files_by_dir.items()):
             print(f"\n📂 {directory}:")
             for file_info in sorted(files, key=lambda x: x.path):
-                size_str = f"{file_info.size/1024:.1f}KB" if file_info.size > 1024 else f"{file_info.size}B"
+                size_str = f"{file_info.size / 1024:.1f}KB" if file_info.size > 1024 else f"{file_info.size}B"
                 file_type = "📄" if not file_info.is_binary else "📦"
                 filename = Path(file_info.path).name
                 print(f"  {file_type} {filename} ({size_str})")
@@ -424,4 +430,3 @@ def create_validator_from_config(config_path: Optional[str] = None) -> EnhancedR
             print(f"Warning: Could not load config from {config_path}: {e}", file=sys.stderr)
 
     return EnhancedRequestValidator(limits)
-

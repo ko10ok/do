@@ -1,12 +1,9 @@
 """Argument parser module for DOQ CLI."""
 
-import glob
-import os
-import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -39,12 +36,12 @@ class ArgumentParser:
     PROVIDERS_WITH_FILE_SUPPORT = {"claude"}  # Providers that support direct file uploads
 
     def __init__(self, working_dir: Optional[str] = None):
-        self.text_parts = []
-        self.files = []
+        self.text_parts: List[str] = []
+        self.files: List[FileInfo] = []
         self.provider = "claude"
         self.interactive = False
         self.dry_run = False
-        self.raw_args = []
+        self.raw_args: List[str] = []
         self._working_dir = Path(working_dir) if working_dir else None
 
     @property
@@ -347,7 +344,11 @@ class ArgumentParser:
 
         return files
 
-    def _scan_directory(self, dir_path: Path, recursive: bool, max_depth: int = 5, current_depth: int = 0) -> List[FileInfo]:
+    def _scan_directory(self,
+                        dir_path: Path,
+                        recursive: bool,
+                        max_depth: int = 5, current_depth: int = 0
+                        ) -> List[FileInfo]:
         """Scan directory for files with optional recursion and enhanced filtering."""
         files = []
 
@@ -403,8 +404,8 @@ class ArgumentParser:
                 elif item.is_dir() and recursive:
                     # Recursively scan subdirectories
                     subdir_files = self._scan_directory(item, recursive=True,
-                                                     max_depth=max_depth,
-                                                     current_depth=current_depth + 1)
+                                                        max_depth=max_depth,
+                                                        current_depth=current_depth + 1)
                     files.extend(subdir_files)
 
         except PermissionError:
@@ -437,9 +438,10 @@ class ArgumentParser:
             # Determine include mode
             include_mode = "full"
             if is_binary and size > self.BINARY_TRUNCATE_BYTES * 2:
-                include_mode = self._ask_binary_file_mode(file_path)
-                if include_mode is None:
+                binary_mode = self._ask_binary_file_mode(file_path)
+                if binary_mode is None:
                     return None
+                include_mode = binary_mode
 
             # Check if provider supports files
             if self.provider in self.PROVIDERS_WITH_FILE_SUPPORT:
@@ -569,7 +571,6 @@ class ArgumentParser:
             if self._is_directory_pattern(arg):
                 return True
 
-
         return False
 
     def _find_common_base_directory(self) -> str:
@@ -625,11 +626,14 @@ class ArgumentParser:
                     else:
                         # Handle patterns like src/, src/*, src/**
                         if arg.endswith("/**"):
-                            return str((self._cwd / arg[:-3] if not Path(arg[:-3]).is_absolute() else Path(arg[:-3])).resolve())
+                            return str((self._cwd / arg[:-3] if not Path(arg[:-3]).is_absolute() else Path(
+                                arg[:-3])).resolve())
                         elif arg.endswith("/*"):
-                            return str((self._cwd / arg[:-2] if not Path(arg[:-2]).is_absolute() else Path(arg[:-2])).resolve())
+                            return str((self._cwd / arg[:-2] if not Path(arg[:-2]).is_absolute() else Path(
+                                arg[:-2])).resolve())
                         elif arg.endswith("/"):
-                            return str((self._cwd / arg[:-1] if not Path(arg[:-1]).is_absolute() else Path(arg[:-1])).resolve())
+                            return str((self._cwd / arg[:-1] if not Path(arg[:-1]).is_absolute() else Path(
+                                arg[:-1])).resolve())
                         else:
                             return str((self._cwd / arg if not Path(arg).is_absolute() else Path(arg)).resolve())
                 except Exception:
@@ -667,7 +671,8 @@ class ArgumentParser:
         # Generate recursive directory tree structure
         return self._build_recursive_directory_tree(target_dir)
 
-    def _build_recursive_directory_tree(self, dir_path: Path, prefix: str = "", max_depth: int = 5, current_depth: int = 0) -> str:
+    def _build_recursive_directory_tree(self, dir_path: Path, prefix: str = "", max_depth: int = 5,
+                                        current_depth: int = 0) -> str:
         """Build a recursive directory tree showing both files and directories."""
         if current_depth > max_depth:
             return f"{prefix}... (max depth {max_depth} reached)"
@@ -783,6 +788,6 @@ class ArgumentParser:
         if size_bytes < 1024:
             return f"{size_bytes}B"
         elif size_bytes < 1024 * 1024:
-            return f"{size_bytes/1024:.1f}KB"
+            return f"{size_bytes / 1024:.1f}KB"
         else:
-            return f"{size_bytes/(1024*1024):.1f}MB"
+            return f"{size_bytes / (1024 * 1024):.1f}MB"

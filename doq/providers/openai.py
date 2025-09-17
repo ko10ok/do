@@ -1,6 +1,5 @@
 """OpenAI provider implementation."""
 
-import sys
 from typing import Any, Dict, Iterator
 
 from ..parser import RequestStructure
@@ -9,7 +8,7 @@ from ..providers import LLMProvider
 try:
     import openai
 except ImportError:
-    openai = None
+    openai = None  # type: ignore
 
 
 class OpenAIProvider(LLMProvider):

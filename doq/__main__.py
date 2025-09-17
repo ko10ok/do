@@ -10,5 +10,6 @@ def main():
     from doq.main import main as doq_main
     return doq_main(sys.argv[1:])
 
+
 if __name__ == "__main__":
     sys.exit(main())
