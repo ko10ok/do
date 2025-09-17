@@ -1,4 +1,4 @@
-# DOQ - Command Line Interface for Multiple LLM Providers
+# DoQue - Command Line Interface for Multiple LLM Providers
 
 A powerful command-line interface for interacting with various Large Language Model (LLM) providers including Claude (Anthropic), ChatGPT (OpenAI), and DeepSeek.
 
