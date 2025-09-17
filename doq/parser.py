@@ -72,6 +72,11 @@ class ArgumentParser:
                 i += 1
                 continue
 
+            if arg == "-h" or arg == "--help":
+                # Help flags are handled in main(), skip parsing here
+                i += 1
+                continue
+
             if arg.startswith("--llm="):
                 self.provider = arg.split("=", 1)[1]
                 i += 1
