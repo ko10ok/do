@@ -5,7 +5,6 @@ from typing import List
 from .parser import ArgumentParser
 from .providers import ProviderFactory
 
-
 def print_dry_run_info(request_structure):
     """Print detailed information about the request in dry-run mode."""
     print("=" * 60)
@@ -37,6 +36,7 @@ def print_dry_run_info(request_structure):
 
 def main(args: List[str] = None):
     """Main entry point for DOQ CLI."""
+    # Use provided args or get from sys.argv
     if args is None:
         args = sys.argv[1:]
 

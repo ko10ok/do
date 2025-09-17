@@ -3,6 +3,7 @@
 
 from setuptools import setup, find_packages
 import os
+import sys
 
 # Read README for long description
 def read_readme():
@@ -11,6 +12,30 @@ def read_readme():
         with open(readme_path, 'r', encoding='utf-8') as f:
             return f.read()
     return ""
+
+# Platform-specific scripts
+def get_platform_scripts():
+    """Return appropriate scripts based on platform."""
+    if sys.platform == "win32":
+        return ["scripts/doq.ps1"]
+    else:
+        return ["scripts/doq_unix"]
+
+# Platform-specific entry points
+def get_platform_entry_points():
+    """Return appropriate entry points based on platform."""
+    if sys.platform == "win32":
+        return {
+            "console_scripts": [
+                "doq=doq.main:main",  # Windows will use PowerShell script, but entry point for compatibility
+            ],
+        }
+    else:
+        return {
+            "console_scripts": [
+                "doq=doq.main:main",  # Unix simple version
+            ],
+        }
 
 setup(
     name="doq",
@@ -39,11 +64,9 @@ setup(
             "mypy>=0.910",
         ]
     },
-    entry_points={
-        "console_scripts": [
-            "doq=doq.main:main",
-        ],
-    },
+    # Platform-specific scripts
+    scripts=get_platform_scripts(),
+    entry_points=get_platform_entry_points(),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
