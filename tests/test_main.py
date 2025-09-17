@@ -1,12 +1,13 @@
 """Unit tests for main CLI module."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from io import StringIO
 import sys
+from io import StringIO
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 from doq.main import main, print_dry_run_info
-from doq.parser import RequestStructure, FileInfo
+from doq.parser import FileInfo, RequestStructure
 
 
 class TestMainFunction:

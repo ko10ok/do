@@ -1,10 +1,12 @@
 """Base classes and interfaces for DOQ LLM providers."""
 
 import os
-import yaml
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Iterator
 from pathlib import Path
+from typing import Any, Dict, Iterator, Optional
+
+import yaml
+
 from ..parser import RequestStructure
 
 

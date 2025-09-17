@@ -1,9 +1,10 @@
 """DeepSeek provider implementation."""
 
 import sys
-from typing import Iterator, Dict, Any
-from ..providers import LLMProvider
+from typing import Any, Dict, Iterator
+
 from ..parser import RequestStructure
+from ..providers import LLMProvider
 
 try:
     import openai

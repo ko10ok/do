@@ -2,9 +2,12 @@
 
 import sys
 from typing import List
+
 from .parser import ArgumentParser
 from .providers import ProviderFactory
-from .validator import create_validator_from_config, suggest_optimization_tips, ValidationLimits
+from .validator import (ValidationLimits, create_validator_from_config,
+                        suggest_optimization_tips)
+
 
 def print_default_config():
     """Print default configuration in YAML format from example file."""
@@ -251,8 +254,8 @@ def _has_directory_patterns(raw_args):
 
 def _generate_directory_tree(files):
     """Generate a visual directory tree from the list of files."""
-    from pathlib import Path
     import os
+    from pathlib import Path
 
     if not files:
         return "No files found."

@@ -3,6 +3,7 @@
 
 import sys
 
+
 def main():
     """Main entry point for module execution."""
     # Import and run the main function with command line arguments

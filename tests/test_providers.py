@@ -1,9 +1,11 @@
 """Unit tests for LLM providers."""
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from doq.providers import ConfigManager, ProviderFactory, LLMProvider
-from doq.parser import RequestStructure, FileInfo
+
+from doq.parser import FileInfo, RequestStructure
+from doq.providers import ConfigManager, LLMProvider, ProviderFactory
 
 
 class TestConfigManager:

@@ -2,11 +2,12 @@
 
 import os
 import tempfile
-import pytest
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
-from doq.parser import ArgumentParser, RequestStructure, FileInfo
+import pytest
+
+from doq.parser import ArgumentParser, FileInfo, RequestStructure
 
 
 class TestArgumentParser:

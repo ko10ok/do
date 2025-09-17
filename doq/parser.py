@@ -1,12 +1,12 @@
 """Argument parser module for DOQ CLI."""
 
-import os
-import sys
-import re
 import glob
-from typing import List, Dict, Any, Optional, Tuple
+import os
+import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Direct executable script for doq with proper Unicode handling."""
 
-import sys
 import os
+import sys
 
 # Add current directory to Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +13,7 @@ def setup_unicode_console():
     if sys.platform == "win32":
         try:
             import ctypes
+
             # Set console to UTF-8 mode
             kernel32 = ctypes.windll.kernel32
             kernel32.SetConsoleOutputCP(65001)  # UTF-8

@@ -2,9 +2,10 @@
 
 import os
 import sys
-from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 import yaml
 
 

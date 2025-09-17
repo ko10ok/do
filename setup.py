@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Setup script for doq package."""
 
-from setuptools import setup, find_packages
 import os
 import sys
+
+from setuptools import find_packages, setup
+
+
+def get_version(filename='doq/version'):
+    return open(filename, "r").read().strip()
 
 # Read README for long description
 def read_readme():
@@ -39,7 +44,7 @@ def get_platform_entry_points():
 
 setup(
     name="doq",
-    version="1.0.0",
+    version=get_version(),
     description="A command-line interface for various LLM providers (Claude, ChatGPT, DeepSeek)",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
