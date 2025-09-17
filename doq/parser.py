@@ -350,7 +350,7 @@ class ArgumentParser:
                         max_depth: int = 5, current_depth: int = 0
                         ) -> List[FileInfo]:
         """Scan directory for files with optional recursion and enhanced filtering."""
-        files = []
+        files: List[FileInfo] = []
 
         if current_depth > max_depth:
             print(f"Warning: Maximum directory depth ({max_depth}) reached in {dir_path}", file=sys.stderr)

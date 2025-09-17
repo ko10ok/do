@@ -37,7 +37,7 @@ class LLMProvider(ABC):
 class ConfigManager:
     """Manages configuration for LLM providers."""
 
-    DEFAULT_CONFIG = {
+    DEFAULT_CONFIG: Dict[str, Any] = {
         "default_provider": "claude",
         "providers": {
             "claude": {
@@ -79,17 +79,19 @@ class ConfigManager:
 
     def _merge_with_defaults(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Merge loaded config with defaults."""
-        merged = self.DEFAULT_CONFIG.copy()
+        merged: Dict[str, Any] = self.DEFAULT_CONFIG.copy()
 
         if "default_provider" in config:
             merged["default_provider"] = config["default_provider"]
 
         if "providers" in config:
+            providers_dict = merged["providers"]
+            assert isinstance(providers_dict, dict), "providers should be a dictionary"
             for provider, settings in config["providers"].items():
-                if provider in merged["providers"]:
-                    merged["providers"][provider].update(settings)
+                if provider in providers_dict:
+                    providers_dict[provider].update(settings)
                 else:
-                    merged["providers"][provider] = settings
+                    providers_dict[provider] = settings
 
         return merged
 

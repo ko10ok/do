@@ -4,7 +4,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -21,9 +21,9 @@ class ValidationLimits:
     auto_skip_common_ignores: bool = True
 
     # Common files/directories to ignore
-    ignore_patterns: List[str] = None
+    ignore_patterns: Optional[List[str]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.ignore_patterns is None:
             self.ignore_patterns = [
                 "__pycache__", ".git", ".svn", ".hg", "node_modules",
@@ -76,11 +76,11 @@ class RequestValidator:
 
         return cls(limits)
 
-    def validate_request(self, files: List, text_query: str) -> ValidationResult:
+    def validate_request(self, files: List[Any], text_query: str) -> ValidationResult:
         """Validate complete request before sending to LLM."""
-        warnings = []
-        errors = []
-        skipped_files = []
+        warnings: List[str] = []
+        errors: List[str] = []
+        skipped_files: List[str] = []
 
         # Count files and sizes
         file_count = len(files)
@@ -127,7 +127,10 @@ class RequestValidator:
         if estimated_tokens > 50000:  # ~50k tokens warning
             warnings.append(f"High estimated token count: ~{estimated_tokens:,} tokens")
         elif estimated_tokens > 100000:  # ~100k tokens error
-            errors.append(f"Extremely high token count: ~{estimated_tokens:,} tokens - consider reducing request size")
+            errors.append(
+                "Extremely high token count: "
+                f"~{estimated_tokens:,} tokens - consider reducing request size"
+            )
 
         is_valid = len(errors) == 0
 
@@ -142,7 +145,7 @@ class RequestValidator:
             skipped_files=skipped_files
         )
 
-    def _estimate_tokens(self, text_query: str, files: List) -> int:
+    def _estimate_tokens(self, text_query: str, files: List[Any]) -> int:
         """Estimate total token count for the request."""
         # Rough estimation: 1 token ≈ 4 characters for English text
         # Binary files count more due to hex encoding
@@ -153,7 +156,7 @@ class RequestValidator:
             if file_info.content:
                 if file_info.is_binary:
                     # Binary files as hex take more space
-                    total_chars += len(file_info.content) * 1.2
+                    total_chars += int(len(file_info.content) * 1.2)
                 else:
                     total_chars += len(file_info.content)
 
@@ -184,7 +187,7 @@ class RequestValidator:
         return response.lower().startswith('y')
 
 
-def suggest_optimization_tips():
+def suggest_optimization_tips() -> None:
     """Suggest ways to reduce token consumption."""
     tips = [
         "💡 Token Optimization Tips:",
@@ -226,12 +229,12 @@ class EnhancedRequestValidator(RequestValidator):
     def __init__(self, limits: Optional[ValidationLimits] = None):
         super().__init__(limits)
 
-    def validate_request_enhanced(self, files: List, text_query: str,
+    def validate_request_enhanced(self, files: List[Any], text_query: str,
                                   interactive: bool = False) -> ValidationResult:
         """Enhanced validation with additional checks and user interaction."""
-        warnings = []
-        errors = []
-        skipped_files = []
+        warnings: List[str] = []
+        errors: List[str] = []
+        skipped_files: List[str] = []
 
         # Run basic validation first
         basic_result = self.validate_request(files, text_query)
@@ -262,13 +265,13 @@ class EnhancedRequestValidator(RequestValidator):
             skipped_files=skipped_files
         )
 
-    def _check_file_diversity(self, files: List, warnings: List[str]):
+    def _check_file_diversity(self, files: List[Any], warnings: List[str]) -> None:
         """Check for too many similar files that might be redundant."""
         if len(files) < 3:
             return
 
         # Group files by extension
-        extensions = {}
+        extensions: Dict[str, int] = {}
         for file_info in files:
             ext = Path(file_info.path).suffix.lower()
             extensions[ext] = extensions.get(ext, 0) + 1
@@ -276,9 +279,10 @@ class EnhancedRequestValidator(RequestValidator):
         # Warn about too many files of same type
         for ext, count in extensions.items():
             if count > 10:
-                warnings.append(f"Many {ext or 'no-extension'} files ({count}). Consider filtering specific files.")
+                ext_name = ext or 'no-extension'
+                warnings.append(f"Many {ext_name} files ({count}). Consider filtering specific files.")
 
-    def _check_redundant_files(self, files: List, warnings: List[str]):
+    def _check_redundant_files(self, files: List[Any], warnings: List[str]) -> None:
         """Check for potentially redundant files."""
         redundant_patterns = [
             ('test', 'Many test files detected. Consider excluding unless analyzing tests specifically.'),
@@ -293,7 +297,7 @@ class EnhancedRequestValidator(RequestValidator):
             if len(matching_files) > 5:
                 warnings.append(f"{message} ({len(matching_files)} files)")
 
-    def _check_query_complexity(self, text_query: str, warnings: List[str]):
+    def _check_query_complexity(self, text_query: str, warnings: List[str]) -> None:
         """Check query complexity and suggest improvements."""
         if len(text_query) < 5:
             warnings.append("Very short query. Consider providing more context for better results.")
@@ -309,7 +313,7 @@ class EnhancedRequestValidator(RequestValidator):
         if len(found_vague) > 2:
             warnings.append("Query contains vague terms. Be more specific about what you want to know.")
 
-    def _check_directory_structure(self, files: List, warnings: List[str]):
+    def _check_directory_structure(self, files: List[Any], warnings: List[str]) -> None:
         """Check directory structure for potential issues."""
         if len(files) == 0:
             return
@@ -325,7 +329,7 @@ class EnhancedRequestValidator(RequestValidator):
         if len(directories) > 15:
             warnings.append(
                 f"Files scattered across many directories ({len(directories)}). "
-                f"Consider organizing by area of interest."
+                "Consider organizing by area of interest."
             )
 
     def _interactive_validation(self, result: ValidationResult, warnings: List[str],
@@ -357,10 +361,9 @@ class EnhancedRequestValidator(RequestValidator):
         estimated_tokens = self._estimate_tokens("", [])  # Will be calculated properly
         if estimated_tokens > 10000:
             print(f"  • Estimated tokens: ~{estimated_tokens:,}")
-            print(
-                f"  • Estimated cost: $0.{estimated_tokens // 1000:02d} - $0.{estimated_tokens // 500:02d} "
-                f"(rough estimate)"
-            )
+            cost_low = estimated_tokens // 1000
+            cost_high = estimated_tokens // 500
+            print(f"  • Estimated cost: $0.{cost_low:02d} - $0.{cost_high:02d} (rough estimate)")
 
         print()
         print("OPTIONS:")
@@ -385,14 +388,14 @@ class EnhancedRequestValidator(RequestValidator):
             else:
                 print("Please choose y, n, t, or f")
 
-    def _show_file_list(self, result: ValidationResult):
+    def _show_file_list(self, result: ValidationResult) -> None:
         """Show detailed file list for user review."""
         print("📁 FILES TO BE INCLUDED:")
         print("-" * 40)
 
         # Group files by directory for better readability
-        files_by_dir = {}
-        for file_info in result.files if hasattr(result, 'files') else []:
+        files_by_dir: Dict[str, List[Any]] = {}
+        for file_info in getattr(result, 'files', []):
             dir_path = str(Path(file_info.path).parent)
             if dir_path not in files_by_dir:
                 files_by_dir[dir_path] = []
@@ -400,11 +403,10 @@ class EnhancedRequestValidator(RequestValidator):
 
         for directory, files in sorted(files_by_dir.items()):
             print(f"\n📂 {directory}:")
-            for file_info in sorted(files, key=lambda x: x.path):
-                size_str = f"{file_info.size / 1024:.1f}KB" if file_info.size > 1024 else f"{file_info.size}B"
-                file_type = "📄" if not file_info.is_binary else "📦"
-                filename = Path(file_info.path).name
-                print(f"  {file_type} {filename} ({size_str})")
+            for file_info in files:
+                size_info = f"({file_info.size / 1024:.1f}KB)" if hasattr(file_info, 'size') else ""
+                file_type = "📄" if not getattr(file_info, 'is_binary', False) else "📊"
+                print(f"  {file_type} {Path(file_info.path).name} {size_info}")
 
 
 def create_validator_from_config(config_path: Optional[str] = None) -> EnhancedRequestValidator:
