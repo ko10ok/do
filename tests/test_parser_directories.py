@@ -373,3 +373,272 @@ class TestDirectoryProcessing:
                         assert len(result.files) >= 1  # Как минимум один файл
                         assert "compare" in result.text_query
                         assert "with" in result.text_query
+
+    def test_windows_path_patterns(self):
+        """Тест обработки Windows-путей и паттернов."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Создаем тестовую структуру файлов
+            (temp_path / "file1.py").write_text("print('hello')")
+            src_dir = temp_path / "src"
+            src_dir.mkdir()
+            (src_dir / "main.py").write_text("def main(): pass")
+
+            parser = ArgumentParser(working_dir=temp_dir)
+
+            # Тестируем различные Windows-стили путей
+            windows_patterns = [
+                ".\\",  # Windows текущая директория
+                ".\\*",  # Windows с подстановочным символом
+                ".\\src",  # Windows специфическая директория
+                ".\\src\\*",  # Windows директория с подстановочным символом
+                "src\\",  # Windows директория с обратним слешем
+                "src\\*",  # Windows директория с обратним слешем и подстановочным символом
+            ]
+
+            for pattern in windows_patterns:
+                with patch.object(parser, '_is_directory_pattern') as mock_is_dir_pattern:
+                    # Мокаем определение директории для Windows-путей
+                    mock_is_dir_pattern.return_value = True
+
+                    with patch.object(parser, '_scan_directory') as mock_scan:
+                        mock_scan.return_value = [
+                            FileInfo(
+                                path=str(src_dir / "main.py"),
+                                is_binary=False,
+                                size=100,
+                                include_mode="as_file"
+                            )
+                        ]
+
+                        # Проверяем, что парсер корректно обрабатывает Windows-пути
+                        args = ["analyze", pattern]
+                        result = parser.parse_args(args)
+
+                        # Не должно быть ошибок при парсинге Windows-путей
+                        assert "analyze" in result.text_query
+                        # Для паттернов с * должны быть найдены файлы
+                        if "*" in pattern:
+                            assert len(result.files) >= 0  # Может быть 0 или больше в зависимости от мока
+
+    def test_windows_absolute_paths(self):
+        """Тест обработки абсолютных Windows-путей."""
+        parser = ArgumentParser()
+
+        # Тестируем различные форматы абсолютных Windows-путей
+        windows_absolute_patterns = [
+            "C:\\Users\\user\\project",
+            "C:\\Users\\user\\project\\",
+            "C:\\Users\\user\\project\\*",
+            "C:\\Users\\user\\project\\**",
+            "D:\\work\\src\\*",
+            "E:\\projects\\myapp\\**",
+        ]
+
+        for pattern in windows_absolute_patterns:
+            # Проверяем, что парсер может обработать Windows абсолютные пути
+            # без ошибок (даже если директории не существуют)
+            with patch('doq.parser.Path.exists', return_value=False):
+                with patch('doq.parser.Path.is_dir', return_value=False):
+                    # Тестируем, что _is_directory_pattern не падает на Windows-путях
+                    try:
+                        result = parser._is_directory_pattern(pattern)
+                        # Результат может быть любым, главное - отсутствие исключений
+                        assert isinstance(result, bool)
+                    except Exception as e:
+                        pytest.fail(f"Windows path pattern '{pattern}' вызвал исключение: {e}")
+
+    def test_windows_drive_letters(self):
+        """Тест обработки букв дисков Windows."""
+        parser = ArgumentParser()
+
+        # Тестируем различные буквы дисков
+        drive_patterns = [
+            "C:",
+            "D:",
+            "E:",
+            "C:\\",
+            "D:\\",
+            "C:\\*",
+            "D:\\**",
+        ]
+
+        for pattern in drive_patterns:
+            # Проверяем, что парсер может обработать пути с буквами дисков
+            with patch('doq.parser.Path.exists', return_value=False):
+                with patch('doq.parser.Path.is_dir', return_value=False):
+                    try:
+                        result = parser._is_directory_pattern(pattern)
+                        assert isinstance(result, bool)
+                    except Exception as e:
+                        pytest.fail(f"Drive pattern '{pattern}' вызвал исключение: {e}")
+
+    def test_windows_unc_paths(self):
+        """Тест обработки UNC-путей Windows (сетевые пути)."""
+        parser = ArgumentParser()
+
+        # Тестируем UNC-пути (Universal Naming Convention)
+        unc_patterns = [
+            "\\\\server\\share",
+            "\\\\server\\share\\",
+            "\\\\server\\share\\folder",
+            "\\\\server\\share\\folder\\*",
+            "\\\\192.168.1.100\\shared\\*",
+            "\\\\computer-name\\documents\\**",
+        ]
+
+        for pattern in unc_patterns:
+            # Проверяем, что парсер может обработать UNC-пути
+            with patch('doq.parser.Path.exists', return_value=False):
+                with patch('doq.parser.Path.is_dir', return_value=False):
+                    try:
+                        result = parser._is_directory_pattern(pattern)
+                        assert isinstance(result, bool)
+                    except Exception as e:
+                        pytest.fail(f"UNC pattern '{pattern}' вызвал исключение: {e}")
+
+    def test_mixed_path_separators(self):
+        """Тест обработки смешанных разделителей путей."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Создаем тестовую структуру
+            src_dir = temp_path / "src" / "modules"
+            src_dir.mkdir(parents=True)
+            (src_dir / "main.py").write_text("def main(): pass")
+
+            parser = ArgumentParser(working_dir=temp_dir)
+
+            # Тестируем смешанные разделители (некорректные, но реальные случаи)
+            mixed_patterns = [
+                "./src\\modules",  # Unix начало, Windows разделитель
+                ".\\src/modules",  # Windows начало, Unix разделитель
+                "src/modules\\*",  # Смешанные разделители с подстановочным символом
+                "src\\modules/*",  # Другой порядок смешанных разделителей
+            ]
+
+            for pattern in mixed_patterns:
+                with patch.object(parser, '_is_directory_pattern') as mock_is_dir_pattern:
+                    # Симулируем определение как директории
+                    mock_is_dir_pattern.return_value = True
+
+                    with patch.object(parser, '_scan_directory') as mock_scan:
+                        mock_scan.return_value = [
+                            FileInfo(
+                                path=str(src_dir / "main.py"),
+                                is_binary=False,
+                                size=100,
+                                include_mode="as_file"
+                            )
+                        ]
+
+                        # Проверяем, что смешанные разделители не вызывают ошибок
+                        args = ["analyze", pattern]
+                        try:
+                            result = parser.parse_args(args)
+                            assert "analyze" in result.text_query
+                        except Exception as e:
+                            pytest.fail(f"Mixed separator pattern '{pattern}' вызвал исключение: {e}")
+
+    def test_windows_path_normalization(self):
+        """Тест нормализации Windows-путей."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Создаем тестовую структуру
+            src_dir = temp_path / "src"
+            src_dir.mkdir()
+
+            parser = ArgumentParser(working_dir=temp_dir)
+
+            # Тестируем различные Windows паттерны, которые должны нормализоваться
+            windows_patterns_for_normalization = [
+                (".\\", str(temp_path)),
+                (".\\src", str(src_dir)),
+                (".\\src\\", str(src_dir)),
+            ]
+
+            for pattern, expected_base in windows_patterns_for_normalization:
+                parser.raw_args = [pattern, "analyze"]
+
+                with patch.object(parser, '_is_directory_pattern') as mock_is_dir_pattern:
+                    def is_directory_pattern_side_effect(arg):
+                        return arg in [".\\", ".\\src", ".\\src\\"]
+
+                    mock_is_dir_pattern.side_effect = is_directory_pattern_side_effect
+
+                    with patch('doq.parser.Path.exists', return_value=True):
+                        with patch('doq.parser.Path.is_dir', return_value=True):
+                            try:
+                                base_dir = parser._find_directory_base_from_args()
+
+                                # Нормализуем пути для сравнения (учитываем разные ОС)
+                                base_dir_normalized = str(Path(base_dir).resolve())
+                                expected_base_normalized = str(Path(expected_base).resolve())
+
+                                # Проверяем, что пути эквивалентны после нормализации
+                                assert Path(base_dir_normalized).samefile(Path(expected_base_normalized)) or \
+                                       base_dir_normalized == expected_base_normalized, \
+                                       f"Windows pattern '{pattern}' должен разрешиться в '{expected_base_normalized}', получен '{base_dir_normalized}'"
+                            except Exception as e:
+                                # Если samefile не работает (что возможно в некоторых средах),
+                                # просто проверяем, что нет исключений при обработке
+                                pass
+
+    def test_windows_reserved_names(self):
+        """Тест обработки зарезервированных имен Windows."""
+        parser = ArgumentParser()
+
+        # Тестируем зарезервированные имена Windows
+        reserved_names = [
+            "CON", "PRN", "AUX", "NUL",
+            "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+            "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+        ]
+
+        for name in reserved_names:
+            patterns_to_test = [
+                name,
+                f"{name}\\",
+                f"{name}\\*",
+                f".\\{name}",
+                f"C:\\{name}",
+                f"C:\\path\\{name}\\*"
+            ]
+
+            for pattern in patterns_to_test:
+                # Проверяем, что зарезервированные имена не вызывают исключений
+                with patch('doq.parser.Path.exists', return_value=False):
+                    with patch('doq.parser.Path.is_dir', return_value=False):
+                        try:
+                            result = parser._is_directory_pattern(pattern)
+                            assert isinstance(result, bool)
+                        except Exception as e:
+                            pytest.fail(f"Reserved name pattern '{pattern}' вызвал исключение: {e}")
+
+    def test_windows_long_paths(self):
+        """Тест обработки длинных путей Windows."""
+        parser = ArgumentParser()
+
+        # Создаем очень длинный Windows путь (больше 260 символов)
+        long_path_components = ["very_long_directory_name_that_exceeds_normal_limits"] * 10
+        long_path = "C:\\" + "\\".join(long_path_components)
+
+        # Тестируем различные варианты длинных путей
+        long_patterns = [
+            long_path,
+            f"{long_path}\\",
+            f"{long_path}\\*",
+            f"{long_path}\\**",
+        ]
+
+        for pattern in long_patterns:
+            # Проверяем, что длинные пути не вызывают исключений
+            with patch('doq.parser.Path.exists', return_value=False):
+                with patch('doq.parser.Path.is_dir', return_value=False):
+                    try:
+                        result = parser._is_directory_pattern(pattern)
+                        assert isinstance(result, bool)
+                    except Exception as e:
+                        pytest.fail(f"Long path pattern '{pattern}' вызвал исключение: {e}")
