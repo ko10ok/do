@@ -894,12 +894,6 @@ class ArgumentParser:
     def _process_url(self, url: str) -> Optional[FileInfo]:
         """Download content from URL and return FileInfo object."""
         try:
-            if requests is None:
-                print(
-                    "Error: 'requests' library is required for URL processing. Install it with: pip install requests",
-                    file=sys.stderr
-                )
-                return None
 
             print(f"Downloading content from {url}...")
 
