@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from .parser import ArgumentParser
 from .providers import ProviderFactory
-from .validator import create_validator_from_config, suggest_optimization_tips
+from .validator import create_validator_from_config
 
 
 def print_default_config():
@@ -83,6 +83,12 @@ def print_help():
     print("  doq analyze data.csv")
     print('  doq "Explain this function" function.py')
     print("  doq debug error.log")
+    print()
+    print("URL PROCESSING:")
+    print('  doq "Analyze this webpage" https://example.com/page.html')
+    print('  doq "Explain this API" https://api.github.com/users/octocat')
+    print('  doq "Review this code" https://raw.githubusercontent.com/user/repo/main/file.py')
+    print('  doq "What does this script do?" https://gist.githubusercontent.com/user/id/raw/script.js')
     print()
     print("DIRECTORY PROCESSING:")
     print('  doq "Review project structure" .           # Current directory')
@@ -381,11 +387,6 @@ def main(args: Optional[List[str]] = None):
         # Handle dry-run mode
         if request_structure.dry_run:
             print_dry_run_info(request_structure, validation_result)
-
-            if validation_result.warnings or validation_result.errors:
-                print("\nOPTIMIZATION SUGGESTIONS:")
-                suggest_optimization_tips()
-
             return 0
 
         # Check validation results

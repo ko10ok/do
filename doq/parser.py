@@ -4,6 +4,9 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
+from urllib.parse import urlparse
+
+import requests
 
 
 @dataclass
@@ -87,7 +90,14 @@ class ArgumentParser:
                 continue
 
             if arg.startswith("--llm="):
-                self.provider = arg.split("=", 1)[1]
+                provider_name = arg.split("=", 1)[1]
+                # Validate provider name
+                valid_providers = {"claude", "openai", "deepseek"}
+                if provider_name not in valid_providers:
+                    raise ValueError(
+                        f"Unknown provider '{provider_name}'. Available providers: {', '.join(sorted(valid_providers))}"
+                    )
+                self.provider = provider_name
                 i += 1
                 continue
 
@@ -95,6 +105,17 @@ class ArgumentParser:
             if self._is_directory_pattern(arg):
                 directory_files = self._process_directory_pattern(arg)
                 self.files.extend(directory_files)
+                i += 1
+                continue
+
+            # Check if argument is a URL
+            if self._is_url(arg):
+                url_file_info = self._process_url(arg)
+                if url_file_info:
+                    self.files.append(url_file_info)
+                else:
+                    # If URL processing failed, treat as text
+                    self.text_parts.append(arg)
                 i += 1
                 continue
 
@@ -211,15 +232,18 @@ class ArgumentParser:
         except UnicodeEncodeError:
             return False
 
+        # Normalize mixed path separators
+        normalized_arg = arg.replace('\\', '/')
+
         # Direct patterns
         direct_patterns = [".", "./", "./*", "./**"]
-        if arg in direct_patterns:
+        if normalized_arg in direct_patterns:
             return True
 
         # Pattern like ./directory, ./directory/, ./directory/*, ./directory/**
-        if arg.startswith("./"):
+        if normalized_arg.startswith("./"):
             # Remove ./ prefix for checking
-            path_part = arg[2:]
+            path_part = normalized_arg[2:]
 
             # Handle patterns like ./directory, ./directory/, ./directory/*, ./directory/**
             if path_part.endswith("/**"):
@@ -249,14 +273,36 @@ class ArgumentParser:
                 except (OSError, ValueError):
                     return False
 
+        # Windows-style patterns like .\directory
+        if normalized_arg.startswith("./") or arg.startswith(".\\"):
+            # Handle Windows-style patterns by converting to Unix-style
+            if arg.startswith(".\\"):
+                normalized_arg = "./" + arg[2:].replace('\\', '/')
+
+            path_part = normalized_arg[2:]
+
+            if path_part.endswith("/**"):
+                base_path = self._cwd / path_part[:-3]
+            elif path_part.endswith("/*"):
+                base_path = self._cwd / path_part[:-2]
+            elif path_part.endswith("/"):
+                base_path = self._cwd / path_part[:-1]
+            else:
+                base_path = self._cwd / path_part
+
+            try:
+                return base_path.exists() and base_path.is_dir()
+            except (OSError, ValueError):
+                return False
+
         # Direct directory patterns like src/, src/*, src/**
-        if arg.endswith("/") or arg.endswith("/*") or arg.endswith("/**"):
-            if arg.endswith("/**"):
-                base_path = self._cwd / arg[:-3]
-            elif arg.endswith("/*"):
-                base_path = self._cwd / arg[:-2]
+        if normalized_arg.endswith("/") or normalized_arg.endswith("/*") or normalized_arg.endswith("/**"):
+            if normalized_arg.endswith("/**"):
+                base_path = self._cwd / normalized_arg[:-3]
+            elif normalized_arg.endswith("/*"):
+                base_path = self._cwd / normalized_arg[:-2]
             else:  # ends with /
-                base_path = self._cwd / arg[:-1]
+                base_path = self._cwd / normalized_arg[:-1]
 
             try:
                 return base_path.exists() and base_path.is_dir()
@@ -269,12 +315,13 @@ class ArgumentParser:
             return False
 
         # Additional safety check: skip very common non-directory words
-        if arg.lower() in {'hello', 'world', 'test', 'file', 'content', 'data', 'main', 'utils'}:
+        if normalized_arg.lower() in {'hello', 'world', 'test', 'file', 'content', 'data', 'main', 'utils'}:
             return False
 
         # Check if it's a plain directory path (but be conservative)
         try:
-            path = self._cwd / arg if not Path(arg).is_absolute() else Path(arg)
+            # Use normalized path for checking
+            path = self._cwd / normalized_arg if not Path(normalized_arg).is_absolute() else Path(normalized_arg)
             return path.exists() and path.is_dir()
         except (OSError, ValueError):
             return False
@@ -284,28 +331,31 @@ class ArgumentParser:
         files = []
 
         try:
+            # Normalize mixed path separators
+            normalized_pattern = pattern.replace('\\', '/')
+
             # Check if pattern contains wildcard - only include files if it does
-            should_include_files = "*" in pattern
+            should_include_files = "*" in normalized_pattern
 
             # Normalize the pattern
             recursive = False
             base_path = None
 
-            if pattern == ".":
+            if normalized_pattern == ".":
                 base_path = self._cwd
                 recursive = False
-            elif pattern == "./":
+            elif normalized_pattern == "./":
                 base_path = self._cwd
                 recursive = False
-            elif pattern == "./*":
+            elif normalized_pattern == "./*":
                 base_path = self._cwd
                 recursive = False
-            elif pattern == "./**":
+            elif normalized_pattern == "./**":
                 base_path = self._cwd
                 recursive = True
-            elif pattern.startswith("./"):
+            elif normalized_pattern.startswith("./"):
                 # Handle ./directory, ./directory/, ./directory/*, ./directory/**
-                path_part = pattern[2:]
+                path_part = normalized_pattern[2:]
                 if path_part.endswith("/**"):
                     base_path = self._cwd / path_part[:-3]
                     recursive = True
@@ -318,18 +368,22 @@ class ArgumentParser:
                 else:
                     base_path = self._cwd / path_part
                     recursive = False
-            elif pattern.endswith("/**"):
-                base_path = self._cwd / pattern[:-3] if not Path(pattern[:-3]).is_absolute() else Path(pattern[:-3])
+            elif normalized_pattern.endswith("/**"):
+                base_path = self._cwd / normalized_pattern[:-3] if not Path(
+                    normalized_pattern[:-3]).is_absolute() else Path(normalized_pattern[:-3])
                 recursive = True
-            elif pattern.endswith("/*"):
-                base_path = self._cwd / pattern[:-2] if not Path(pattern[:-2]).is_absolute() else Path(pattern[:-2])
+            elif normalized_pattern.endswith("/*"):
+                base_path = self._cwd / normalized_pattern[:-2] if not Path(
+                    normalized_pattern[:-2]).is_absolute() else Path(normalized_pattern[:-2])
                 recursive = False
-            elif pattern.endswith("/"):
-                base_path = self._cwd / pattern[:-1] if not Path(pattern[:-1]).is_absolute() else Path(pattern[:-1])
+            elif normalized_pattern.endswith("/"):
+                base_path = self._cwd / normalized_pattern[:-1] if not Path(
+                    normalized_pattern[:-1]).is_absolute() else Path(normalized_pattern[:-1])
                 recursive = False
             else:
                 # Plain directory name
-                base_path = self._cwd / pattern if not Path(pattern).is_absolute() else Path(pattern)
+                base_path = self._cwd / normalized_pattern if not Path(normalized_pattern).is_absolute() else Path(
+                    normalized_pattern)
                 recursive = False
 
             if base_path and base_path.exists() and base_path.is_dir():
@@ -549,7 +603,7 @@ class ArgumentParser:
         # Add file contents to text if not using file mode
         for file_info in self.files:
             if file_info.include_mode != "as_file" and file_info.content:
-                text_query += "\n\n" + file_info.content
+                text_query += "\n\n" + file_info.content + "\n### file end ###"
 
         return RequestStructure(
             text_query=text_query.strip(),
@@ -611,10 +665,18 @@ class ArgumentParser:
 
             if self._is_directory_pattern(arg):
                 try:
-                    if arg == "." or arg == "./" or arg == "./*" or arg == "./**":
+                    # Normalize Windows-style paths to Unix-style for consistent processing
+                    normalized_arg = arg.replace('\\', '/')
+
+                    if (
+                            normalized_arg == "."
+                            or normalized_arg == "./"
+                            or normalized_arg == "./*"
+                            or normalized_arg == "./**"
+                    ):
                         return str(self._cwd)
-                    elif arg.startswith("./"):
-                        path_part = arg[2:]
+                    elif normalized_arg.startswith("./"):
+                        path_part = normalized_arg[2:]
                         if path_part.endswith("/**"):
                             return str((self._cwd / path_part[:-3]).resolve())
                         elif path_part.endswith("/*"):
@@ -623,19 +685,41 @@ class ArgumentParser:
                             return str((self._cwd / path_part[:-1]).resolve())
                         else:
                             return str((self._cwd / path_part).resolve())
-                    else:
-                        # Handle patterns like src/, src/*, src/**
-                        if arg.endswith("/**"):
-                            return str((self._cwd / arg[:-3] if not Path(arg[:-3]).is_absolute() else Path(
-                                arg[:-3])).resolve())
-                        elif arg.endswith("/*"):
-                            return str((self._cwd / arg[:-2] if not Path(arg[:-2]).is_absolute() else Path(
-                                arg[:-2])).resolve())
-                        elif arg.endswith("/"):
-                            return str((self._cwd / arg[:-1] if not Path(arg[:-1]).is_absolute() else Path(
-                                arg[:-1])).resolve())
+                    # Handle Windows-style patterns like .\, .\src, .\src\
+                    elif arg.startswith(".\\"):
+                        # Convert to Unix-style and process
+                        path_part = arg[2:].replace('\\', '/')
+                        if path_part == "":
+                            return str(self._cwd)
+                        elif path_part.endswith("/"):
+                            return str((self._cwd / path_part[:-1]).resolve())
                         else:
-                            return str((self._cwd / arg if not Path(arg).is_absolute() else Path(arg)).resolve())
+                            return str((self._cwd / path_part).resolve())
+                    else:
+                        # Handle patterns like src/, src/*, src/** or src\, src\*, src\**
+                        if normalized_arg.endswith("/**"):
+                            base_path = normalized_arg[:-3]
+                            if not Path(base_path).is_absolute():
+                                return str((self._cwd / base_path).resolve())
+                            else:
+                                return str(Path(base_path).resolve())
+                        elif normalized_arg.endswith("/*"):
+                            base_path = normalized_arg[:-2]
+                            if not Path(base_path).is_absolute():
+                                return str((self._cwd / base_path).resolve())
+                            else:
+                                return str(Path(base_path).resolve())
+                        elif normalized_arg.endswith("/"):
+                            base_path = normalized_arg[:-1]
+                            if not Path(base_path).is_absolute():
+                                return str((self._cwd / base_path).resolve())
+                            else:
+                                return str(Path(base_path).resolve())
+                        else:
+                            if not Path(normalized_arg).is_absolute():
+                                return str((self._cwd / normalized_arg).resolve())
+                            else:
+                                return str(Path(normalized_arg).resolve())
                 except Exception:
                     continue
 
@@ -791,3 +875,100 @@ class ArgumentParser:
             return f"{size_bytes / 1024:.1f}KB"
         else:
             return f"{size_bytes / (1024 * 1024):.1f}MB"
+
+    def _is_url(self, arg: str) -> bool:
+        """Check if argument is a valid URL."""
+        import re
+
+        # URL pattern that matches http, https protocols
+        url_pattern = re.compile(
+            r'^https?://'  # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+            r'localhost|'  # localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+            r'(?::\d+)?'  # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+        return bool(url_pattern.match(arg))
+
+    def _process_url(self, url: str) -> Optional[FileInfo]:
+        """Download content from URL and return FileInfo object."""
+        try:
+
+            print(f"Downloading content from {url}...")
+
+            # Configure request with timeout and headers
+            headers = {
+                'User-Agent': 'DOQ CLI Tool/1.0'
+            }
+
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+
+            # Get content type to determine if it's binary
+            content_type = response.headers.get('content-type', '').lower()
+            is_binary = not (
+                    'text/' in content_type or
+                    'application/json' in content_type or
+                    'application/xml' in content_type or
+                    'application/javascript' in content_type or
+                    'application/x-javascript' in content_type
+            )
+
+            # Get filename from URL
+            parsed_url = urlparse(url)
+            filename = parsed_url.path.split('/')[-1] if parsed_url.path and parsed_url.path != '/' else ''
+            if not filename or filename == '/' or not filename.strip():
+                filename = f"content_from_{parsed_url.netloc.replace('.', '_')}"
+
+            # Get content size
+            content_size = len(response.content)
+
+            # Check if content is too large
+            if content_size > self.LARGE_FILE_THRESHOLD:
+                if not self._confirm_large_file(f"URL content ({filename})", content_size):
+                    return None
+
+            # Determine include mode based on provider and content type
+            include_mode = "full"
+            # For Claude provider, only use as_file mode for non-text content to ensure content is loaded for tests
+            if self.provider in self.PROVIDERS_WITH_FILE_SUPPORT and is_binary:
+                include_mode = "as_file"
+
+            file_info = FileInfo(
+                path=f"{url} -> {filename}",
+                is_binary=is_binary,
+                size=content_size,
+                include_mode=include_mode
+            )
+
+            # Load content if needed
+            if include_mode != "as_file":
+                if is_binary:
+                    # For binary content from URLs, always show truncated view
+                    hex_data = response.content.hex()
+                    if len(response.content) > self.BINARY_TRUNCATE_BYTES * 2:
+                        start_bytes = response.content[:self.BINARY_TRUNCATE_BYTES].hex()
+                        end_bytes = response.content[-self.BINARY_TRUNCATE_BYTES:].hex()
+                        file_info.content = (
+                            f"### {url} (binary, {content_size} bytes) ###"
+                            f"\n{start_bytes}...{content_size}...{end_bytes}\n"
+                        )
+                    else:
+                        file_info.content = f"### {url} (binary, {content_size} bytes) ###\n{hex_data}\n"
+                else:
+                    # Text content
+                    try:
+                        text_content = response.text
+                        file_info.content = f"### {url} ###\n{text_content}\n"
+                    except UnicodeDecodeError:
+                        # Fallback to binary if text decoding fails
+                        hex_data = response.content.hex()
+                        file_info.content = f"### {url} (binary fallback, {content_size} bytes) ###\n{hex_data}\n"
+
+            print(f"Successfully downloaded {content_size} bytes from {url}")
+            return file_info
+
+        except Exception as e:
+            print(f"Error downloading from {url}: {e}", file=sys.stderr)
+            return None

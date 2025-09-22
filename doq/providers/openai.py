@@ -28,7 +28,7 @@ class OpenAIProvider(LLMProvider):
         if not self.config.get("api_key"):
             raise ValueError(
                 "OpenAI API key not found. Set OPENAI_API_KEY environment variable "
-                "or add api_key to ~/.llm-cli-config.yaml under providers.openai"
+                "or add api_key to ~/.doq-config.yaml under providers.openai"
             )
 
     @property

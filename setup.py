@@ -52,23 +52,7 @@ setup(
     author_email="home_r@mail.ru",
     url="https://github.com/ko10ok/do",
     packages=find_packages(),
-    python_requires=">=3.8",
-    install_requires=[
-        "anthropic>=0.3.0",
-        "openai>=1.0.0",
-        "requests>=2.25.0",
-        "pyyaml>=6.0",
-        "click>=8.0.0",
-    ],
-    extras_require={
-        "dev": [
-            "pytest>=6.0.0",
-            "pytest-asyncio>=0.18.0",
-            "black>=22.0.0",
-            "flake8>=4.0.0",
-            "mypy>=0.910",
-        ]
-    },
+    python_requires=">=3.9",
     # Platform-specific scripts
     scripts=get_platform_scripts(),
     entry_points=get_platform_entry_points(),
@@ -77,7 +61,6 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",

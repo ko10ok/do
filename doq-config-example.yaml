@@ -26,13 +26,13 @@ validation:
   max_files: 10
 
   # Maximum lines in text files
-  max_text_lines: 2000
+  max_text_lines: 10000
 
   # Maximum size for binary files (KB)
   max_binary_size_kb: 10
 
   # Maximum total request size (MB)
-  max_total_size_mb: 20
+  max_total_size_mb: 1
 
   # Maximum directory recursion depth
   max_directory_depth: 8
@@ -109,10 +109,10 @@ directory_scanning:
 # Token estimation and cost control
 cost_control:
   # Warn when estimated tokens exceed this threshold
-  warn_token_threshold: 50000
+  warn_token_threshold: 20000
 
   # Block requests when estimated tokens exceed this threshold
-  block_token_threshold: 150000
+  block_token_threshold: 50000
 
   # Show estimated cost information
   show_cost_estimates: true
