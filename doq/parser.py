@@ -668,7 +668,12 @@ class ArgumentParser:
                     # Normalize Windows-style paths to Unix-style for consistent processing
                     normalized_arg = arg.replace('\\', '/')
 
-                    if normalized_arg == "." or normalized_arg == "./" or normalized_arg == "./*" or normalized_arg == "./**":
+                    if (
+                            normalized_arg == "."
+                            or normalized_arg == "./"
+                            or normalized_arg == "./*"
+                            or normalized_arg == "./**"
+                    ):
                         return str(self._cwd)
                     elif normalized_arg.startswith("./"):
                         path_part = normalized_arg[2:]
@@ -693,16 +698,28 @@ class ArgumentParser:
                     else:
                         # Handle patterns like src/, src/*, src/** or src\, src\*, src\**
                         if normalized_arg.endswith("/**"):
-                            return str((self._cwd / normalized_arg[:-3] if not Path(normalized_arg[:-3]).is_absolute() else Path(
-                                normalized_arg[:-3])).resolve())
+                            base_path = normalized_arg[:-3]
+                            if not Path(base_path).is_absolute():
+                                return str((self._cwd / base_path).resolve())
+                            else:
+                                return str(Path(base_path).resolve())
                         elif normalized_arg.endswith("/*"):
-                            return str((self._cwd / normalized_arg[:-2] if not Path(normalized_arg[:-2]).is_absolute() else Path(
-                                normalized_arg[:-2])).resolve())
+                            base_path = normalized_arg[:-2]
+                            if not Path(base_path).is_absolute():
+                                return str((self._cwd / base_path).resolve())
+                            else:
+                                return str(Path(base_path).resolve())
                         elif normalized_arg.endswith("/"):
-                            return str((self._cwd / normalized_arg[:-1] if not Path(normalized_arg[:-1]).is_absolute() else Path(
-                                normalized_arg[:-1])).resolve())
+                            base_path = normalized_arg[:-1]
+                            if not Path(base_path).is_absolute():
+                                return str((self._cwd / base_path).resolve())
+                            else:
+                                return str(Path(base_path).resolve())
                         else:
-                            return str((self._cwd / normalized_arg if not Path(normalized_arg).is_absolute() else Path(normalized_arg)).resolve())
+                            if not Path(normalized_arg).is_absolute():
+                                return str((self._cwd / normalized_arg).resolve())
+                            else:
+                                return str(Path(normalized_arg).resolve())
                 except Exception:
                     continue
 
