@@ -93,7 +93,12 @@ class ArgumentParser:
                 continue
 
             if arg.startswith("--llm="):
-                self.provider = arg.split("=", 1)[1]
+                provider_name = arg.split("=", 1)[1]
+                # Validate provider name
+                valid_providers = {"claude", "openai", "deepseek"}
+                if provider_name not in valid_providers:
+                    raise ValueError(f"Unknown provider '{provider_name}'. Available providers: {', '.join(sorted(valid_providers))}")
+                self.provider = provider_name
                 i += 1
                 continue
 
@@ -566,7 +571,7 @@ class ArgumentParser:
         # Add file contents to text if not using file mode
         for file_info in self.files:
             if file_info.include_mode != "as_file" and file_info.content:
-                text_query += "\n\n" + file_info.content
+                text_query += "\n\n" + file_info.content + "\n### file end ###"
 
         return RequestStructure(
             text_query=text_query.strip(),
