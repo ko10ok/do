@@ -4,6 +4,12 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
+from urllib.parse import urlparse
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 
 @dataclass
@@ -95,6 +101,17 @@ class ArgumentParser:
             if self._is_directory_pattern(arg):
                 directory_files = self._process_directory_pattern(arg)
                 self.files.extend(directory_files)
+                i += 1
+                continue
+
+            # Check if argument is a URL
+            if self._is_url(arg):
+                url_file_info = self._process_url(arg)
+                if url_file_info:
+                    self.files.append(url_file_info)
+                else:
+                    # If URL processing failed, treat as text
+                    self.text_parts.append(arg)
                 i += 1
                 continue
 
@@ -791,3 +808,100 @@ class ArgumentParser:
             return f"{size_bytes / 1024:.1f}KB"
         else:
             return f"{size_bytes / (1024 * 1024):.1f}MB"
+
+    def _is_url(self, arg: str) -> bool:
+        """Check if argument is a valid URL."""
+        import re
+
+        # URL pattern that matches http, https protocols
+        url_pattern = re.compile(
+            r'^https?://'  # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+            r'localhost|'  # localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+            r'(?::\d+)?'  # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+        return bool(url_pattern.match(arg))
+
+    def _process_url(self, url: str) -> Optional[FileInfo]:
+        """Download content from URL and return FileInfo object."""
+        try:
+            if requests is None:
+                print(f"Error: 'requests' library is required for URL processing. Install it with: pip install requests", file=sys.stderr)
+                return None
+
+            print(f"Downloading content from {url}...")
+
+            # Configure request with timeout and headers
+            headers = {
+                'User-Agent': 'DOQ CLI Tool/1.0'
+            }
+
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+
+            # Get content type to determine if it's binary
+            content_type = response.headers.get('content-type', '').lower()
+            is_binary = not (
+                'text/' in content_type or
+                'application/json' in content_type or
+                'application/xml' in content_type or
+                'application/javascript' in content_type or
+                'application/x-javascript' in content_type
+            )
+
+            # Get filename from URL
+            parsed_url = urlparse(url)
+            filename = parsed_url.path.split('/')[-1] if parsed_url.path and parsed_url.path != '/' else ''
+            if not filename or filename == '/' or not filename.strip():
+                filename = f"content_from_{parsed_url.netloc.replace('.', '_')}"
+
+            # Get content size
+            content_size = len(response.content)
+
+            # Check if content is too large
+            if content_size > self.LARGE_FILE_THRESHOLD:
+                if not self._confirm_large_file(f"URL content ({filename})", content_size):
+                    return None
+
+            # Determine include mode based on provider and content type
+            include_mode = "full"
+            # For Claude provider, only use as_file mode for non-text content to ensure content is loaded for tests
+            if self.provider in self.PROVIDERS_WITH_FILE_SUPPORT and is_binary:
+                include_mode = "as_file"
+
+            file_info = FileInfo(
+                path=f"{url} -> {filename}",
+                is_binary=is_binary,
+                size=content_size,
+                include_mode=include_mode
+            )
+
+            # Load content if needed
+            if include_mode != "as_file":
+                if is_binary:
+                    # For binary content from URLs, always show truncated view
+                    hex_data = response.content.hex()
+                    if len(response.content) > self.BINARY_TRUNCATE_BYTES * 2:
+                        start_bytes = response.content[:self.BINARY_TRUNCATE_BYTES].hex()
+                        end_bytes = response.content[-self.BINARY_TRUNCATE_BYTES:].hex()
+                        file_info.content = f"### {url} (binary, {content_size} bytes) ###\n{start_bytes}...{content_size}...{end_bytes}\n"
+                    else:
+                        file_info.content = f"### {url} (binary, {content_size} bytes) ###\n{hex_data}\n"
+                else:
+                    # Text content
+                    try:
+                        text_content = response.text
+                        file_info.content = f"### {url} ###\n{text_content}\n"
+                    except UnicodeDecodeError:
+                        # Fallback to binary if text decoding fails
+                        hex_data = response.content.hex()
+                        file_info.content = f"### {url} (binary fallback, {content_size} bytes) ###\n{hex_data}\n"
+
+            print(f"Successfully downloaded {content_size} bytes from {url}")
+            return file_info
+
+        except Exception as e:
+            print(f"Error downloading from {url}: {e}", file=sys.stderr)
+            return None
