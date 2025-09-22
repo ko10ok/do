@@ -233,15 +233,18 @@ class ArgumentParser:
         except UnicodeEncodeError:
             return False
 
+        # Normalize mixed path separators
+        normalized_arg = arg.replace('\\', '/')
+
         # Direct patterns
         direct_patterns = [".", "./", "./*", "./**"]
-        if arg in direct_patterns:
+        if normalized_arg in direct_patterns:
             return True
 
         # Pattern like ./directory, ./directory/, ./directory/*, ./directory/**
-        if arg.startswith("./"):
+        if normalized_arg.startswith("./"):
             # Remove ./ prefix for checking
-            path_part = arg[2:]
+            path_part = normalized_arg[2:]
 
             # Handle patterns like ./directory, ./directory/, ./directory/*, ./directory/**
             if path_part.endswith("/**"):
@@ -271,14 +274,36 @@ class ArgumentParser:
                 except (OSError, ValueError):
                     return False
 
+        # Windows-style patterns like .\directory
+        if normalized_arg.startswith("./") or arg.startswith(".\\"):
+            # Handle Windows-style patterns by converting to Unix-style
+            if arg.startswith(".\\"):
+                normalized_arg = "./" + arg[2:].replace('\\', '/')
+
+            path_part = normalized_arg[2:]
+
+            if path_part.endswith("/**"):
+                base_path = self._cwd / path_part[:-3]
+            elif path_part.endswith("/*"):
+                base_path = self._cwd / path_part[:-2]
+            elif path_part.endswith("/"):
+                base_path = self._cwd / path_part[:-1]
+            else:
+                base_path = self._cwd / path_part
+
+            try:
+                return base_path.exists() and base_path.is_dir()
+            except (OSError, ValueError):
+                return False
+
         # Direct directory patterns like src/, src/*, src/**
-        if arg.endswith("/") or arg.endswith("/*") or arg.endswith("/**"):
-            if arg.endswith("/**"):
-                base_path = self._cwd / arg[:-3]
-            elif arg.endswith("/*"):
-                base_path = self._cwd / arg[:-2]
+        if normalized_arg.endswith("/") or normalized_arg.endswith("/*") or normalized_arg.endswith("/**"):
+            if normalized_arg.endswith("/**"):
+                base_path = self._cwd / normalized_arg[:-3]
+            elif normalized_arg.endswith("/*"):
+                base_path = self._cwd / normalized_arg[:-2]
             else:  # ends with /
-                base_path = self._cwd / arg[:-1]
+                base_path = self._cwd / normalized_arg[:-1]
 
             try:
                 return base_path.exists() and base_path.is_dir()
@@ -291,12 +316,13 @@ class ArgumentParser:
             return False
 
         # Additional safety check: skip very common non-directory words
-        if arg.lower() in {'hello', 'world', 'test', 'file', 'content', 'data', 'main', 'utils'}:
+        if normalized_arg.lower() in {'hello', 'world', 'test', 'file', 'content', 'data', 'main', 'utils'}:
             return False
 
         # Check if it's a plain directory path (but be conservative)
         try:
-            path = self._cwd / arg if not Path(arg).is_absolute() else Path(arg)
+            # Use normalized path for checking
+            path = self._cwd / normalized_arg if not Path(normalized_arg).is_absolute() else Path(normalized_arg)
             return path.exists() and path.is_dir()
         except (OSError, ValueError):
             return False
@@ -306,28 +332,31 @@ class ArgumentParser:
         files = []
 
         try:
+            # Normalize mixed path separators
+            normalized_pattern = pattern.replace('\\', '/')
+
             # Check if pattern contains wildcard - only include files if it does
-            should_include_files = "*" in pattern
+            should_include_files = "*" in normalized_pattern
 
             # Normalize the pattern
             recursive = False
             base_path = None
 
-            if pattern == ".":
+            if normalized_pattern == ".":
                 base_path = self._cwd
                 recursive = False
-            elif pattern == "./":
+            elif normalized_pattern == "./":
                 base_path = self._cwd
                 recursive = False
-            elif pattern == "./*":
+            elif normalized_pattern == "./*":
                 base_path = self._cwd
                 recursive = False
-            elif pattern == "./**":
+            elif normalized_pattern == "./**":
                 base_path = self._cwd
                 recursive = True
-            elif pattern.startswith("./"):
+            elif normalized_pattern.startswith("./"):
                 # Handle ./directory, ./directory/, ./directory/*, ./directory/**
-                path_part = pattern[2:]
+                path_part = normalized_pattern[2:]
                 if path_part.endswith("/**"):
                     base_path = self._cwd / path_part[:-3]
                     recursive = True
@@ -340,18 +369,18 @@ class ArgumentParser:
                 else:
                     base_path = self._cwd / path_part
                     recursive = False
-            elif pattern.endswith("/**"):
-                base_path = self._cwd / pattern[:-3] if not Path(pattern[:-3]).is_absolute() else Path(pattern[:-3])
+            elif normalized_pattern.endswith("/**"):
+                base_path = self._cwd / normalized_pattern[:-3] if not Path(normalized_pattern[:-3]).is_absolute() else Path(normalized_pattern[:-3])
                 recursive = True
-            elif pattern.endswith("/*"):
-                base_path = self._cwd / pattern[:-2] if not Path(pattern[:-2]).is_absolute() else Path(pattern[:-2])
+            elif normalized_pattern.endswith("/*"):
+                base_path = self._cwd / normalized_pattern[:-2] if not Path(normalized_pattern[:-2]).is_absolute() else Path(normalized_pattern[:-2])
                 recursive = False
-            elif pattern.endswith("/"):
-                base_path = self._cwd / pattern[:-1] if not Path(pattern[:-1]).is_absolute() else Path(pattern[:-1])
+            elif normalized_pattern.endswith("/"):
+                base_path = self._cwd / normalized_pattern[:-1] if not Path(normalized_pattern[:-1]).is_absolute() else Path(normalized_pattern[:-1])
                 recursive = False
             else:
                 # Plain directory name
-                base_path = self._cwd / pattern if not Path(pattern).is_absolute() else Path(pattern)
+                base_path = self._cwd / normalized_pattern if not Path(normalized_pattern).is_absolute() else Path(normalized_pattern)
                 recursive = False
 
             if base_path and base_path.exists() and base_path.is_dir():
