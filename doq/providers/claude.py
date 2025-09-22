@@ -28,7 +28,7 @@ class ClaudeProvider(LLMProvider):
         if not self.config.get("api_key"):
             raise ValueError(
                 "Claude API key not found. Set ANTHROPIC_API_KEY environment variable "
-                "or add api_key to ~/.llm-cli-config.yaml under providers.claude"
+                "or add api_key to ~/.doq-config.yaml under providers.claude"
             )
 
     @property

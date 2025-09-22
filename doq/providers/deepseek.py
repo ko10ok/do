@@ -31,7 +31,7 @@ class DeepSeekProvider(LLMProvider):
         if not self.config.get("api_key"):
             raise ValueError(
                 "DeepSeek API key not found. Set DEEPSEEK_API_KEY environment variable "
-                "or add api_key to ~/.llm-cli-config.yaml under providers.deepseek"
+                "or add api_key to ~/.doq-config.yaml under providers.deepseek"
             )
 
     @property
