@@ -665,10 +665,13 @@ class ArgumentParser:
 
             if self._is_directory_pattern(arg):
                 try:
-                    if arg == "." or arg == "./" or arg == "./*" or arg == "./**":
+                    # Normalize Windows-style paths to Unix-style for consistent processing
+                    normalized_arg = arg.replace('\\', '/')
+
+                    if normalized_arg == "." or normalized_arg == "./" or normalized_arg == "./*" or normalized_arg == "./**":
                         return str(self._cwd)
-                    elif arg.startswith("./"):
-                        path_part = arg[2:]
+                    elif normalized_arg.startswith("./"):
+                        path_part = normalized_arg[2:]
                         if path_part.endswith("/**"):
                             return str((self._cwd / path_part[:-3]).resolve())
                         elif path_part.endswith("/*"):
@@ -677,19 +680,29 @@ class ArgumentParser:
                             return str((self._cwd / path_part[:-1]).resolve())
                         else:
                             return str((self._cwd / path_part).resolve())
-                    else:
-                        # Handle patterns like src/, src/*, src/**
-                        if arg.endswith("/**"):
-                            return str((self._cwd / arg[:-3] if not Path(arg[:-3]).is_absolute() else Path(
-                                arg[:-3])).resolve())
-                        elif arg.endswith("/*"):
-                            return str((self._cwd / arg[:-2] if not Path(arg[:-2]).is_absolute() else Path(
-                                arg[:-2])).resolve())
-                        elif arg.endswith("/"):
-                            return str((self._cwd / arg[:-1] if not Path(arg[:-1]).is_absolute() else Path(
-                                arg[:-1])).resolve())
+                    # Handle Windows-style patterns like .\, .\src, .\src\
+                    elif arg.startswith(".\\"):
+                        # Convert to Unix-style and process
+                        path_part = arg[2:].replace('\\', '/')
+                        if path_part == "":
+                            return str(self._cwd)
+                        elif path_part.endswith("/"):
+                            return str((self._cwd / path_part[:-1]).resolve())
                         else:
-                            return str((self._cwd / arg if not Path(arg).is_absolute() else Path(arg)).resolve())
+                            return str((self._cwd / path_part).resolve())
+                    else:
+                        # Handle patterns like src/, src/*, src/** or src\, src\*, src\**
+                        if normalized_arg.endswith("/**"):
+                            return str((self._cwd / normalized_arg[:-3] if not Path(normalized_arg[:-3]).is_absolute() else Path(
+                                normalized_arg[:-3])).resolve())
+                        elif normalized_arg.endswith("/*"):
+                            return str((self._cwd / normalized_arg[:-2] if not Path(normalized_arg[:-2]).is_absolute() else Path(
+                                normalized_arg[:-2])).resolve())
+                        elif normalized_arg.endswith("/"):
+                            return str((self._cwd / normalized_arg[:-1] if not Path(normalized_arg[:-1]).is_absolute() else Path(
+                                normalized_arg[:-1])).resolve())
+                        else:
+                            return str((self._cwd / normalized_arg if not Path(normalized_arg).is_absolute() else Path(normalized_arg)).resolve())
                 except Exception:
                     continue
 
