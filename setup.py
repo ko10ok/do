@@ -52,7 +52,7 @@ setup(
     author_email="home_r@mail.ru",
     url="https://github.com/ko10ok/do",
     packages=find_packages(),
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     # Platform-specific scripts
     scripts=get_platform_scripts(),
     entry_points=get_platform_entry_points(),
@@ -61,7 +61,6 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",

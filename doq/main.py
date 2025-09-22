@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from .parser import ArgumentParser
 from .providers import ProviderFactory
-from .validator import create_validator_from_config, suggest_optimization_tips
+from .validator import create_validator_from_config
 
 
 def print_default_config():
@@ -387,11 +387,6 @@ def main(args: Optional[List[str]] = None):
         # Handle dry-run mode
         if request_structure.dry_run:
             print_dry_run_info(request_structure, validation_result)
-
-            if validation_result.warnings or validation_result.errors:
-                print("\nOPTIMIZATION SUGGESTIONS:")
-                suggest_optimization_tips()
-
             return 0
 
         # Check validation results
