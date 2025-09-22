@@ -2,341 +2,300 @@
 
 A powerful command-line interface for interacting with various Large Language Model (LLM) providers including Claude (Anthropic), ChatGPT (OpenAI), and DeepSeek.
 
-## Features
+## What is DoQue?
 
-- **Multiple LLM Providers**: Support for Claude, OpenAI, and DeepSeek
-- **Cross-Platform Support**: Native Unicode handling on Windows and Unix-like systems
-- **Enhanced Directory Processing**: Smart directory scanning with configurable patterns
-- **Advanced File Processing**: Automatically detect and include text/binary files with validation
-- **Request Validation**: Intelligent limits and warnings to prevent large token usage
-- **Smart Argument Parsing**: Handle quoted strings, file paths, and special parameters
-- **Interactive Mode**: Confirm requests before sending with detailed validation
-- **Dry Run Mode**: Preview requests with validation results
-- **Streaming Responses**: Real-time response display
-- **Configurable**: Comprehensive configuration via YAML file or environment variables
+DoQue is a universal CLI tool that allows you to send queries to different AI providers while automatically including files, directories, and web content for context. It handles the complexity of file processing, validation, and formatting so you can focus on getting answers from AI about your code, documents, or any other content.
+
+### Key Capabilities
+
+- **Multi-Provider Support**: Switch between Claude, OpenAI, and DeepSeek with a simple flag
+- **Smart File Processing**: Automatically analyze single files, multiple files, or entire directory structures
+- **Web Content Analysis**: Fetch and analyze content from URLs, GitHub repositories, APIs, and code snippets
+- **Intelligent Validation**: Built-in limits and warnings to prevent excessive token usage and costs
+- **Cross-Platform**: Native Unicode support on Windows, macOS, and Linux
 
 ## Installation
 
-### From Source
+```bash
+pip install doque
+```
+
+## Quick Setup
+
+Set your API key for at least one provider:
 
 ```bash
-git clone <repository-url>
-cd doq
-pip install -e .
+# Choose one or more
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+export OPENAI_API_KEY="your-openai-api-key"
+export DEEPSEEK_API_KEY="your-deepseek-api-key"
 ```
 
-### Platform-Specific Commands
+## Basic Usage
 
-After installation, the following commands will be available:
-
-**Windows**:
-```powershell
-doq "your query"  # PowerShell script with Unicode support
-```
-
-**Unix/Linux/macOS**:
+### Simple Questions
 ```bash
-doq "your query"  # Native script
+# No quotes needed for simple concepts
+doq What is machine learning?
+doq Explain recursion
+doq Define polymorphism
 ```
 
-### From PyPI (when published)
-
-```bash
-pip install doq
-```
-
-## Quick Start
-
-1. **Install the package**:
-   ```bash
-   pip install -e .
-   ```
-
-2. **Set your API key**:
-   ```bash
-   export ANTHROPIC_API_KEY="your-api-key"
-   # or
-   export OPENAI_API_KEY="your-api-key"
-   # or
-   export DEEPSEEK_API_KEY="your-api-key"
-   ```
-
-3. **Basic usage**:
-   ```bash
-   doq "What is machine learning?"
-   doq explain script.py
-   doq "Review this code" main.py utils.py
-   ```
-
-## Usage Examples
-
-### Basic Queries
-
-```bash
-# Simple queries (no quotes needed for single words)
-doq help
-doq explain file.py
-doq summarize document.txt
-
-# Multi-word queries (use quotes)
-doq "What is artificial intelligence?"
-doq "Explain how this algorithm works" algorithm.py
-```
-
-### Directory Processing
-
-```bash
-# Current directory (non-recursive)
-doq "Review project structure" .
-doq analyze ./
-
-# Recursive directory scanning
-doq "Analyze all Python files" ./**
-doq "Review entire project" ./**
-
-# Specific directories
-doq "Check source code" ./src
-doq "Review source files" ./src/*
-doq "Deep analysis of src" ./src/**
-
-# Named directories
-doq "Analyze data processing" data/
-doq "Review all data files" data/*
-doq "Deep scan of data directory" data/**
-```
-
-### File Processing
-
+### File Analysis
 ```bash
 # Single files
-doq "Explain this function" main.py
-doq "What does this script do?" script.py
+doq Review this code script.py
+doq Explain this function utils.py
+doq Debug this file error.log
 
 # Multiple files
-doq "Review these modules" main.py utils.py config.py
-doq "Compare implementations" old_version.py new_version.py
-
-# Mixed files and directories
-doq "Analyze project" main.py ./src/* ./tests/
+doq Compare these implementations old.py new.py
+doq Analyze these modules auth.py user.py
 ```
 
-### Provider Selection
-
+### Directory Analysis
 ```bash
-# Choose specific LLM provider
-doq --llm=claude "Explain quantum computing"
-doq --llm=openai "What does this code do?" script.py
-doq --llm=deepseek "Analyze this data" data.json
+# Current directory overview
+doq Review project structure .
+
+# Specific directory
+doq Analyze data files ./data
+doq Review source code ./src/*
+
+# Recursive analysis with patterns
+doq "Check all Python code" ./**/*.py
 ```
 
-### Interactive Mode
-
+### Choose Your AI Provider
 ```bash
-# Confirm before sending (especially useful for large requests)
-doq -i "Review my entire codebase" ./**
-doq -i "Analyze all Python files" ./src/**
+# Claude (default) - Great for code analysis
+doq Explain this algorithm algorithm.py
+
+# OpenAI - Excellent for explanations
+doq --llm=openai Debug this code buggy.py
+
+# DeepSeek - Good for optimization
+doq --llm=deepseek Optimize this function slow_function.py
 ```
 
-### Dry Run Mode
+## Core Features
 
-```bash
-# Preview request without sending
-doq --dry-run "Test query" file.txt
-doq --dry-run "Analyze project" ./**
-doq --dry-run explain script.py
-```
+### Request Validation
 
-### International Support
+DoQue includes intelligent validation to prevent excessive costs:
 
-```bash
-# Unicode and international text fully supported
-doq "Что такое машинное обучение?"      # Russian
-doq "解释人工智能的基本概念"              # Chinese
-doq "اشرح مفهوم الذكاء الاصطناعي"        # Arabic
-```
+**Default Limits:**
+- Maximum 10 files per request
+- Maximum 10,000 lines per text file
+- Maximum 10KB per binary file
+- Maximum 1MB total request size
+- Maximum 8 directory levels
 
-## Directory Patterns
+**Smart-kind Features:**
+- Approximate token estimation with cost warnings (estimates may vary from actual usage)
+- Automatic detection of test files and redundant content
+- Interactive confirmation for large requests
+- Dry-run mode to preview before sending
 
-DOQ supports flexible directory patterns for scanning files:
-
-| Pattern | Description | Example |
-|---------|-------------|---------|
-| `.` | Current directory (non-recursive) | `doq analyze .` |
-| `./` | Current directory (non-recursive) | `doq review ./` |
-| `./*` | Current directory files | `doq check ./*` |
-| `./**` | Current directory recursive | `doq scan ./**` |
-| `./src` | Specific subdirectory | `doq analyze ./src` |
-| `./src/*` | Files in subdirectory | `doq review ./src/*` |
-| `./src/**` | Subdirectory recursive | `doq scan ./src/**` |
-| `src/` | Directory by name | `doq analyze src/` |
-| `src/*` | Files in named directory | `doq review src/*` |
-| `src/**` | Named directory recursive | `doq scan src/**` |
-
-## Request Validation
-
-DOQ includes intelligent validation to prevent excessive token usage and costs:
-
-### Default Limits
-- **Files**: Maximum 5 files (configurable)
-- **Text files**: Maximum 1,000 lines per file
-- **Binary files**: Maximum 5KB per file
-- **Total size**: Maximum 10MB per request
-- **Directory depth**: Maximum 5 levels of recursion
-
-### Validation Features
-- **Token estimation**: Approximate token count and cost estimation
-- **File type analysis**: Smart detection of redundant or test files
-- **Directory structure analysis**: Warnings for scattered or deep structures
-- **Query optimization**: Suggestions for vague or overly broad queries
-- **Interactive confirmation**: Detailed validation results in interactive mode
-
-### Configuration
-
-Create `~/.doq-config.yaml` to customize limits:
-
-```yaml
-validation:
-  max_files: 10
-  max_text_lines: 2000
-  max_binary_size_kb: 10
-  max_total_size_mb: 20
-  max_directory_depth: 8
-  
-cost_control:
-  warn_token_threshold: 50000
-  block_token_threshold: 150000
-  show_cost_estimates: true
-```
-
-## Command Line Options
+### Command Options
 
 ```bash
 doq [OPTIONS] <query> [files...]
 ```
 
-### Options
-
-- `-h, --help`: Show detailed help with examples
+**Available Options:**
+- `-h, --help`: Show detailed help
 - `-i`: Interactive mode (confirm before sending)
-- `--llm=PROVIDER`: Choose LLM provider (claude, openai, deepseek)
-- `--dry-run`: Show request details without sending
+- `--llm=PROVIDER`: Choose provider (claude, openai, deepseek)
+- `--dry-run`: Preview request without sending
+- `--doq-default-config`: Generate configuration file
 
-### Examples with Options
+### Essential Examples
 
 ```bash
 # Get help
 doq --help
 
-# Interactive mode with validation
-doq -i "Review all my code" ./**
+# Preview large requests
+doq --dry-run Review all code ./**
 
-# Dry run to preview request
-doq --dry-run "Analyze project structure" .
+# Interactive mode for safety
+doq -i Comprehensive analysis ./**
 
-# Specific provider
-doq --llm=openai "Explain this algorithm" algorithm.py
-
-# Combined options
-doq -i --llm=claude --dry-run "Large analysis" ./**
+# Combine options
+doq -i --llm=openai --dry-run Analyze project .
 ```
 
 ## Configuration
 
-### Environment Variables
-
-Set your API keys:
-
-```bash
-export ANTHROPIC_API_KEY="your-anthropic-key"
-export OPENAI_API_KEY="your-openai-key"
-export DEEPSEEK_API_KEY="your-deepseek-key"
-```
-
-### Configuration File
-
-Create `~/.doq-config.yaml`:
+Create `~/.doq-config.yaml` to customize behavior:
 
 ```yaml
 # Default provider
 default_provider: claude
 
-# Provider settings
-providers:
-  claude:
-    model: "claude-3-sonnet-20240229"
-    max_tokens: 4096
-  openai:
-    model: "gpt-4"
-    max_tokens: 4096
-  deepseek:
-    model: "deepseek-chat"
-    max_tokens: 4096
-
 # Validation limits
 validation:
   max_files: 10
-  max_text_lines: 2000
+  max_text_lines: 10000
   max_binary_size_kb: 10
-  max_total_size_mb: 20
+  max_total_size_mb: 1
   max_directory_depth: 8
-
-# Patterns to ignore during directory scanning
   ignore_patterns:
     - "__pycache__"
     - ".git"
     - "node_modules"
-    - ".venv"
     - "*.pyc"
     - "*.log"
-    - "build"
-    - "dist"
+
+# Cost control
+cost_control:
+  warn_token_threshold: 20000
+  block_token_threshold: 50000
+  show_cost_estimates: true
 ```
 
-## Advanced Usage
+Generate default config:
+```bash
+doq --doq-default-config > ~/.doq-config.yaml
+```
 
-### Token Optimization
+## Best Practices
 
-For large projects, use these strategies to reduce token usage:
-
-1. **Start specific**: Begin with specific files rather than entire directories
-2. **Use dry-run**: Preview requests with `--dry-run` to see what will be included
-3. **Focus queries**: Ask specific questions rather than broad "analyze" requests
-4. **Exclude irrelevant files**: Configure ignore patterns to skip tests, docs, logs
-5. **Use interactive mode**: Review validation results before sending
-
-### Best Practices
-
-1. **Directory scanning**: Start with `.` (current directory) before using `./**` (recursive)
-2. **File selection**: Use specific file patterns when possible
-3. **Query focus**: Be specific about what you want to know
-4. **Validation**: Pay attention to warnings about file count and token usage
-5. **Configuration**: Customize limits based on your typical usage patterns
-
-### Performance Tips
-
-- Use `--dry-run` to preview large requests
-- Configure appropriate limits in `~/.doq-config.yaml`
-- Use interactive mode (`-i`) for requests with many files
-- Monitor token estimates to optimize future requests
-- Exclude unnecessary files with ignore patterns
+1. **Start Small**: Begin with specific files before analyzing entire directories
+2. **Use Dry Run**: Preview large requests with `--dry-run`
+3. **Be Specific**: Ask focused questions rather than broad "analyze everything"
+4. **Monitor Tokens**: Pay attention to validation warnings
+5. **Configure Limits**: Adjust settings based on your usage patterns
 
 ## Troubleshooting
 
-### Common Issues
+**Common Issues:**
+- **Unicode on Windows**: Use PowerShell instead of Command Prompt
+- **Large token usage**: Use `--dry-run` to preview and reduce scope
+- **Too many files**: Use more specific patterns or increase limits
+- **API errors**: Verify environment variables are set correctly
 
-1. **Unicode issues on Windows**: Use PowerShell instead of Command Prompt
-2. **Large token usage**: Use `--dry-run` to preview and reduce file count
-3. **Too many files**: Configure higher limits or use more specific patterns
-4. **Permission errors**: Ensure you have read access to directories
-5. **API key errors**: Verify environment variables are set correctly
+**Debug Information:**
+Use `--dry-run` to see files included, validation results, and token estimates.
 
-### Debug Information
+## Advanced Usage
 
-Use `--dry-run` to see:
-- Files that will be included
-- Validation warnings and errors
-- Token estimates
-- Request structure
+### Advanced File Processing
+
+```bash
+# Single file deep analysis
+doq Find potential bugs in this code security.py
+
+# Multiple files with context
+doq Compare these implementations v1/processor.py v2/processor.py
+
+# Mixed files and directories
+doq Analyze the entire authentication system auth/ user.py session.py
+```
+
+### URL and Web Content Analysis
+
+```bash
+# Web pages
+doq Summarize this article https://example.com/article.html
+
+# GitHub files
+doq Explain this implementation https://raw.githubusercontent.com/user/repo/main/file.py
+
+# API endpoints
+doq Analyze this API response https://api.github.com/users/octocat
+
+# Code snippets
+doq What does this script do https://gist.githubusercontent.com/user/id/raw/script.js
+```
+
+### Directory Processing Patterns
+
+DoQue supports flexible directory patterns:
+
+| Pattern | Description | Example |
+|---------|-------------|---------|
+| `.` | Current directory (non-recursive) | `doq Review structure .` |
+| `./**` | Current directory recursive | `doq Deep scan ./**` |
+| `./src` | Specific subdirectory | `doq Review source ./src` |
+| `./src/**` | Subdirectory recursive | `doq Deep source scan ./src/**` |
+| `src/**` | Named directory recursive | `doq Analyze source src/**` |
+
+```bash
+# Current directory (non-recursive)
+doq Review project architecture .
+
+# Recursive scanning
+doq Deep analysis of all code ./**
+
+# Specific patterns
+doq Review all Python files recursively ./**/*.py
+
+# Named directory recursive
+doq Deep scan of source directory ./src/**
+
+# Multi-directory analysis
+doq Review entire backend ./src/** ./api/** ./models/**
+```
+
+### Provider-Specific Usage
+
+```bash
+# Claude for architecture analysis
+doq --llm=claude Analyze the architecture of this system ./src/**
+
+# OpenAI for documentation
+doq --llm=openai Generate documentation for this API api.py
+
+# DeepSeek for optimization
+doq --llm=deepseek Find performance bottlenecks ./src/**
+```
+
+### Interactive and Validation Modes
+
+```bash
+# Interactive mode
+doq -i Comprehensive code review ./**
+
+# Dry run preview
+doq --dry-run Check what files will be included ./src/**
+
+# Combined modes for safety
+doq -i --dry-run --llm=claude Large project analysis ./**
+```
+
+### International and Unicode Support
+
+```bash
+# Unicode queries (quotes required for special characters)
+doq "Что такое машинное обучение?"              # Russian
+doq "解释人工智能的基本概念"                     # Chinese
+doq "اشرح مفهوم الذكاء الاصطناعي"               # Arabic
+
+# Mixed language analysis
+doq Analyze this multilingual codebase international_app/
+```
+
+### Token Optimization Strategies
+
+For large projects:
+
+1. **Start Specific**: Begin with individual files rather than entire directories
+2. **Use Patterns**: Target specific file types with `./**/*.py` instead of `./**`
+3. **Preview First**: Always use `--dry-run` for large requests
+4. **Exclude Irrelevant**: Configure ignore patterns for tests, logs, build files
+5. **Interactive Mode**: Use `-i` for requests with validation warnings
+6. **Focus Queries**: Ask specific questions rather than broad analysis requests
+
+## Environment Variables
+
+```bash
+# API Keys
+export ANTHROPIC_API_KEY="your-anthropic-key"
+export OPENAI_API_KEY="your-openai-key"
+export DEEPSEEK_API_KEY="your-deepseek-key"
+```
 
 ## Contributing
 
@@ -348,10 +307,9 @@ Use `--dry-run` to see:
 
 ## License
 
-[Add license information]
+MIT License - see LICENSE file for details
 
 ## Support
 
-For issues and questions:
-- GitHub Issues: [repository-url]/issues
-- Documentation: [repository-url]/docs
+- GitHub Issues: https://github.com/ko10ok/do/issues
+- Documentation: https://github.com/ko10ok/do
