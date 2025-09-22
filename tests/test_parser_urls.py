@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
 from doq.parser import ArgumentParser, FileInfo
 
 
@@ -281,7 +280,7 @@ class TestURLProcessing:
         test_cases = [
             ("http://example.com/path/file.txt", "file.txt"),
             ("http://example.com/", "content_from_example_com"),  # Обновлено для соответствия логике замены точек
-            ("http://example.com", "content_from_example_com"),   # Обновлено для соответствия логике замены точек
+            ("http://example.com", "content_from_example_com"),  # Обновлено для соответствия логике замены точек
             ("http://example.com/path/", "content_from_example_com")  # Обновлено для соответствия логике замены точек
         ]
 

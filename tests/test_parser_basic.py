@@ -1,6 +1,5 @@
 """Базовые тесты парсера аргументов - парсинг текста, флагов и кавычек."""
 
-import pytest
 from doq.parser import ArgumentParser
 
 

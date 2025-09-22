@@ -6,10 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
-try:
-    import requests
-except ImportError:
-    requests = None
+import requests
 
 
 @dataclass
@@ -97,7 +94,9 @@ class ArgumentParser:
                 # Validate provider name
                 valid_providers = {"claude", "openai", "deepseek"}
                 if provider_name not in valid_providers:
-                    raise ValueError(f"Unknown provider '{provider_name}'. Available providers: {', '.join(sorted(valid_providers))}")
+                    raise ValueError(
+                        f"Unknown provider '{provider_name}'. Available providers: {', '.join(sorted(valid_providers))}"
+                    )
                 self.provider = provider_name
                 i += 1
                 continue
@@ -370,17 +369,21 @@ class ArgumentParser:
                     base_path = self._cwd / path_part
                     recursive = False
             elif normalized_pattern.endswith("/**"):
-                base_path = self._cwd / normalized_pattern[:-3] if not Path(normalized_pattern[:-3]).is_absolute() else Path(normalized_pattern[:-3])
+                base_path = self._cwd / normalized_pattern[:-3] if not Path(
+                    normalized_pattern[:-3]).is_absolute() else Path(normalized_pattern[:-3])
                 recursive = True
             elif normalized_pattern.endswith("/*"):
-                base_path = self._cwd / normalized_pattern[:-2] if not Path(normalized_pattern[:-2]).is_absolute() else Path(normalized_pattern[:-2])
+                base_path = self._cwd / normalized_pattern[:-2] if not Path(
+                    normalized_pattern[:-2]).is_absolute() else Path(normalized_pattern[:-2])
                 recursive = False
             elif normalized_pattern.endswith("/"):
-                base_path = self._cwd / normalized_pattern[:-1] if not Path(normalized_pattern[:-1]).is_absolute() else Path(normalized_pattern[:-1])
+                base_path = self._cwd / normalized_pattern[:-1] if not Path(
+                    normalized_pattern[:-1]).is_absolute() else Path(normalized_pattern[:-1])
                 recursive = False
             else:
                 # Plain directory name
-                base_path = self._cwd / normalized_pattern if not Path(normalized_pattern).is_absolute() else Path(normalized_pattern)
+                base_path = self._cwd / normalized_pattern if not Path(normalized_pattern).is_absolute() else Path(
+                    normalized_pattern)
                 recursive = False
 
             if base_path and base_path.exists() and base_path.is_dir():
@@ -862,7 +865,10 @@ class ArgumentParser:
         """Download content from URL and return FileInfo object."""
         try:
             if requests is None:
-                print(f"Error: 'requests' library is required for URL processing. Install it with: pip install requests", file=sys.stderr)
+                print(
+                    "Error: 'requests' library is required for URL processing. Install it with: pip install requests",
+                    file=sys.stderr
+                )
                 return None
 
             print(f"Downloading content from {url}...")
@@ -878,11 +884,11 @@ class ArgumentParser:
             # Get content type to determine if it's binary
             content_type = response.headers.get('content-type', '').lower()
             is_binary = not (
-                'text/' in content_type or
-                'application/json' in content_type or
-                'application/xml' in content_type or
-                'application/javascript' in content_type or
-                'application/x-javascript' in content_type
+                    'text/' in content_type or
+                    'application/json' in content_type or
+                    'application/xml' in content_type or
+                    'application/javascript' in content_type or
+                    'application/x-javascript' in content_type
             )
 
             # Get filename from URL
@@ -920,7 +926,10 @@ class ArgumentParser:
                     if len(response.content) > self.BINARY_TRUNCATE_BYTES * 2:
                         start_bytes = response.content[:self.BINARY_TRUNCATE_BYTES].hex()
                         end_bytes = response.content[-self.BINARY_TRUNCATE_BYTES:].hex()
-                        file_info.content = f"### {url} (binary, {content_size} bytes) ###\n{start_bytes}...{content_size}...{end_bytes}\n"
+                        file_info.content = (
+                            f"### {url} (binary, {content_size} bytes) ###"
+                            f"\n{start_bytes}...{content_size}...{end_bytes}\n"
+                        )
                     else:
                         file_info.content = f"### {url} (binary, {content_size} bytes) ###\n{hex_data}\n"
                 else:

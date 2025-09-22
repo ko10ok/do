@@ -1,10 +1,8 @@
 """Тесты парсера для обработки файлов - загрузка, бинарные файлы, большие файлы."""
 
 import stat
-from pathlib import Path
 from unittest.mock import mock_open, patch
 
-import pytest
 from doq.parser import ArgumentParser
 
 
@@ -256,7 +254,8 @@ class TestFileProcessing:
                 assert "сравни" in result.text_query
                 assert "найди различия" in result.text_query
                 assert len(result.files) == 2
-                # Файлы должны быть включены в текстовое содержимое, поскольку провайдер по умолчанию - claude (режим as_file)
+                # Файлы должны быть включены в текстовое содержимое,
+                # поскольку провайдер по умолчанию - claude (режим as_file)
 
     def test_complex_argument_parsing(self):
         """Тест сложной комбинации аргументов."""

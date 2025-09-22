@@ -1,6 +1,7 @@
 """Тесты основных структур данных парсера."""
 
 import pytest
+
 from doq.parser import FileInfo, RequestStructure
 
 

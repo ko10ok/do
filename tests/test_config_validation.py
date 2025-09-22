@@ -1,10 +1,10 @@
 """Тесты для проверки загрузки конфигурации валидации из пользовательского файла."""
 
-import tempfile
 import os
-from unittest.mock import patch
+import tempfile
 
-from doq.validator import ValidationLimits, CostControlLimits, create_validator_from_config
+from doq.validator import (CostControlLimits, ValidationLimits,
+                           create_validator_from_config)
 
 
 class TestConfigValidation:
@@ -41,9 +41,15 @@ validation:
             assert limits.max_text_lines == 15000, f"Expected max_text_lines=15000, got {limits.max_text_lines}"
             assert limits.max_binary_size_kb == 20, f"Expected max_binary_size_kb=20, got {limits.max_binary_size_kb}"
             assert limits.max_total_size_mb == 2, f"Expected max_total_size_mb=2, got {limits.max_total_size_mb}"
-            assert limits.max_directory_depth == 10, f"Expected max_directory_depth=10, got {limits.max_directory_depth}"
-            assert limits.warn_large_directories is False, f"Expected warn_large_directories=False, got {limits.warn_large_directories}"
-            assert limits.auto_skip_common_ignores is False, f"Expected auto_skip_common_ignores=False, got {limits.auto_skip_common_ignores}"
+            assert limits.max_directory_depth == 10, (
+                f"Expected max_directory_depth=10, got {limits.max_directory_depth}"
+            )
+            assert limits.warn_large_directories is False, (
+                f"Expected warn_large_directories=False, got {limits.warn_large_directories}"
+            )
+            assert limits.auto_skip_common_ignores is False, (
+                f"Expected auto_skip_common_ignores=False, got {limits.auto_skip_common_ignores}"
+            )
 
             # Проверяем, что кастомные ignore_patterns добавлены к дефолтным
             assert "custom_pattern" in limits.ignore_patterns
@@ -71,9 +77,12 @@ cost_control:
 
             # Проверяем, что значения cost_control загружены из конфига
             cost_limits = validator.cost_limits
-            assert cost_limits.warn_token_threshold == 15000, f"Expected warn_token_threshold=15000, got {cost_limits.warn_token_threshold}"
-            assert cost_limits.block_token_threshold == 40000, f"Expected block_token_threshold=40000, got {cost_limits.block_token_threshold}"
-            assert cost_limits.show_cost_estimates is False, f"Expected show_cost_estimates=False, got {cost_limits.show_cost_estimates}"
+            assert cost_limits.warn_token_threshold == 15000, (f"Expected warn_token_threshold=15000, "
+                                                               f"got {cost_limits.warn_token_threshold}")
+            assert cost_limits.block_token_threshold == 40000, (f"Expected block_token_threshold=40000, "
+                                                                f"got {cost_limits.block_token_threshold}")
+            assert cost_limits.show_cost_estimates is False, (f"Expected show_cost_estimates=False, "
+                                                              f"got {cost_limits.show_cost_estimates}")
 
         finally:
             os.unlink(config_path)

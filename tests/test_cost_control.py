@@ -1,10 +1,10 @@
 """Тесты для функции cost_control."""
 
-import pytest
 from unittest.mock import patch
 
-from doq.validator import ValidationLimits, CostControlLimits, EnhancedRequestValidator
 from doq.parser import FileInfo
+from doq.validator import (CostControlLimits, EnhancedRequestValidator,
+                           ValidationLimits)
 
 
 class TestCostControl:
@@ -190,7 +190,9 @@ class TestCostControl:
         expected_tokens = int(total_chars / 3.5)
 
         # Позволяем некоторую погрешность в оценке
-        assert abs(estimated_tokens - expected_tokens) < 50, f"Token estimation should be accurate: got {estimated_tokens}, expected ~{expected_tokens}"
+        assert abs(
+            estimated_tokens - expected_tokens
+        ) < 50, f"Token estimation should be accurate: got {estimated_tokens}, expected ~{expected_tokens}"
 
     def test_binary_file_token_estimation(self):
         """Тест оценки токенов для бинарных файлов."""
@@ -211,7 +213,8 @@ class TestCostControl:
         total_chars = len("Analyze this binary") + int(len(binary_content) * 1.2)
         expected_tokens = int(total_chars / 3.5)
 
-        assert abs(estimated_tokens - expected_tokens) < 50, "Binary file token estimation should account for hex encoding"
+        assert abs(
+            estimated_tokens - expected_tokens) < 50, "Binary file token estimation should account for hex encoding"
 
     def test_updated_default_values(self):
         """Тест обновленных значений по умолчанию для ValidationLimits."""

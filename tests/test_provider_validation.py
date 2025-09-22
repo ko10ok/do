@@ -1,11 +1,12 @@
 """Тесты для валидации провайдеров LLM."""
 
-import pytest
-from unittest.mock import patch
 from io import StringIO
+from unittest.mock import patch
 
-from doq.parser import ArgumentParser
+import pytest
+
 from doq.main import main
+from doq.parser import ArgumentParser
 
 
 class TestProviderValidation:

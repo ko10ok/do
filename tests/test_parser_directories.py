@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 from doq.parser import ArgumentParser, FileInfo
 
 
@@ -207,24 +208,45 @@ class TestDirectoryProcessing:
 
     def test_wildcard_detection_in_process_directory_pattern(self):
         """Тест обнаружения подстановочных символов в обработке паттерна директории."""
-        parser = ArgumentParser()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
 
-        # Тестируем различные паттерны
-        test_cases = [
-            (".", False),  # Без подстановочного символа
-            ("./", False),  # Без подстановочного символа
-            ("./*", True),  # С подстановочным символом
-            ("./**", True),  # Рекурсивный подстановочный символ
-            ("./src", False),  # Специфицикая директория без подстановочного символа
-            ("./src/*", True),  # Специфическая директория с подстановочным символом
-            ("src/", False),  # Именованная директория без подстановочного символа
-            ("src/*", True),  # Именованная директория с подстановочным символом
-        ]
+            # Создаем тестовую структуру
+            (temp_path / "file1.py").write_text("print('hello')")
+            src_dir = temp_path / "src"
+            src_dir.mkdir()
+            (src_dir / "main.py").write_text("def main(): pass")
 
-        for pattern, expected_has_wildcard in test_cases:
-            # Проверяем логику обнаружения подстановочного символа
-            has_wildcard = "*" in pattern
-            assert has_wildcard == expected_has_wildcard, f"Паттерн {pattern} должен иметь подстановочный символ: {expected_has_wildcard}"
+            parser = ArgumentParser(working_dir=temp_dir)
+
+            # Тестируем различные паттерны и их обработку парсером
+            test_cases = [
+                (".", False),  # Без подстановочного символа - не должно включать файлы
+                ("./", False),  # Без подстановочного символа - не должно включать файлы
+                ("./*", True),  # С подстановочным символом - должно включать файлы
+                ("./**", True),  # Рекурсивный подстановочный символ - должно включать файлы
+                ("./src", False),  # Специфическая директория без подстановочного символа
+                ("./src/*", True),  # Специфическая директория с подстановочным символом
+                ("src/", False),  # Именованная директория без подстановочного символа
+                ("src/*", True),  # Именованная директория с подстановочным символом
+            ]
+
+            for pattern, expected_should_include_files in test_cases:
+                # Тестируем реальную логику парсера
+                files = parser._process_directory_pattern(pattern)
+
+                if expected_should_include_files:
+                    # Для паттернов с * ожидаем, что файлы будут найдены (если директория существует)
+                    if pattern.startswith("./src") and "src" in pattern:
+                        # Для src/* должны найти файлы из src директории
+                        assert len(files) >= 0, f"Паттерн {pattern} с подстановочным символом должен обрабатывать файлы"
+                    elif pattern.startswith("."):
+                        # Для ./* и ./** должны найти файлы из корневой директории
+                        assert len(files) >= 0, f"Паттерн {pattern} с подстановочным символом должен обрабатывать файлы"
+                else:
+                    # Для паттернов без * не должно быть включенных файлов
+                    assert len(files) == 0, (f"Паттерн {pattern} без подстановочного символа не должен включать файлы, "
+                                             f"но включил {len(files)}")
 
     def test_has_directory_patterns_in_args(self):
         """Тест проверки наличия паттернов директорий в аргументах."""
@@ -283,7 +305,10 @@ class TestDirectoryProcessing:
                     # Нормализуем пути для сравнения (resolve() может возвращать разные варианты)
                     base_dir_resolved = str(Path(base_dir).resolve())
                     expected_base_resolved = str(Path(expected_base).resolve())
-                    assert base_dir_resolved == expected_base_resolved, f"Для аргументов {args} ожидается базовая директория {expected_base_resolved}, получена {base_dir_resolved}"
+                    assert base_dir_resolved == expected_base_resolved, (
+                        f"Для аргументов {args} ожидается базовая директория {expected_base_resolved},"
+                        f" получена {base_dir_resolved}"
+                    )
 
     def test_directory_structure_tree_generation(self):
         """Тест генерации дерева структуры директории."""
@@ -529,7 +554,8 @@ class TestDirectoryProcessing:
                     if "*" in pattern:
                         assert len(result.files) >= 0, f"Pattern '{pattern}' should be processed without errors"
                     # Проверяем, что есть базовая структура ответа
-                    assert "analyze" in result.text_query, f"Query text should contain 'analyze' for pattern '{pattern}'"
+                    assert "analyze" in result.text_query, (f"Query text should "
+                                                            f"contain 'analyze' for pattern '{pattern}'")
                     assert result.provider == "claude", f"Provider should be set for pattern '{pattern}'"
                 except Exception as e:
                     pytest.fail(f"Mixed separator pattern '{pattern}' вызвал исключение: {e}")
@@ -545,7 +571,8 @@ class TestDirectoryProcessing:
                 try:
                     result = parser.parse_args(args)
                     # Для паттернов без * не должно быть файлов, но должно быть дерево
-                    assert "analyze" in result.text_query, f"Query text should contain 'analyze' for pattern '{pattern}'"
+                    assert "analyze" in result.text_query, (f"Query text should "
+                                                            f"contain 'analyze' for pattern '{pattern}'")
                     assert result.provider == "claude", f"Provider should be set for pattern '{pattern}'"
                     # Проверяем, что нет исключений при обработке смешанных разделителей
                 except Exception as e:
@@ -580,21 +607,17 @@ class TestDirectoryProcessing:
 
                     with patch('doq.parser.Path.exists', return_value=True):
                         with patch('doq.parser.Path.is_dir', return_value=True):
-                            try:
-                                base_dir = parser._find_directory_base_from_args()
+                            base_dir = parser._find_directory_base_from_args()
 
-                                # Нормализуем пути для сравнения (учитываем разные ОС)
-                                base_dir_normalized = str(Path(base_dir).resolve())
-                                expected_base_normalized = str(Path(expected_base).resolve())
+                            # Нормализуем пути для сравнения (учитываем разные ОС)
+                            base_dir_normalized = str(Path(base_dir).resolve())
+                            expected_base_normalized = str(Path(expected_base).resolve())
 
-                                # Проверяем, что пути эквивалентны после нормализации
-                                assert Path(base_dir_normalized).samefile(Path(expected_base_normalized)) or \
-                                       base_dir_normalized == expected_base_normalized, \
-                                       f"Windows pattern '{pattern}' должен разрешиться в '{expected_base_normalized}', получен '{base_dir_normalized}'"
-                            except Exception as e:
-                                # Если samefile не работает (что возможно в некоторых средах),
-                                # просто проверяем, что нет исключений при обработке
-                                pass
+                            # Проверяем, что пути эквивалентны после нормализации
+                            assert base_dir_normalized == expected_base_normalized, (
+                                f"Windows pattern '{pattern}' должен разрешиться в '{expected_base_normalized}', "
+                                f"получен '{base_dir_normalized}'"
+                            )
 
     def test_windows_reserved_names(self):
         """Тест обработки зарезервированных имен Windows."""

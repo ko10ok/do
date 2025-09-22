@@ -1,13 +1,12 @@
 """Тесты для проверки включения файлов в тело запроса и маркера '### file end ###'."""
 
-import tempfile
 import os
-from unittest.mock import patch
+import tempfile
 from io import StringIO
-import sys
+from unittest.mock import patch
 
+from doq.main import print_dry_run_info
 from doq.parser import ArgumentParser
-from doq.main import main, print_dry_run_info
 
 
 class TestFileInclusionAndMarkers:
