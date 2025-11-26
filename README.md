@@ -312,8 +312,8 @@ DoQue supports Python 3.10+ (tested on 3.10-3.14).
 **Setup:**
 ```bash
 # Create virtual environment
-python3.14 -m venv venv314
-source venv314/bin/activate  # Windows: venv314\Scripts\activate
+python3.13 -m venv venv313
+source venv313/bin/activate  # Windows: venv314\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
