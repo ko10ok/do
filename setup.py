@@ -18,6 +18,11 @@ def read_readme():
             return f.read()
     return ""
 
+def find_required():
+    with open("requirements.txt") as f:
+        return [line.strip() for line in f.read().splitlines()
+                if line.strip() and not line.startswith('#') and not line.startswith(' ')]
+
 # Platform-specific scripts
 def get_platform_scripts():
     """Return appropriate scripts based on platform."""
@@ -49,10 +54,11 @@ setup(
     long_description=read_readme(),
     long_description_content_type="text/markdown",
     author="Yuriy Sagitov",
-    author_email="home_r@mail.ru",
+    author_email="pro100.ko10ok@gmail.com",
     url="https://github.com/ko10ok/do",
-    packages=find_packages(),
-    python_requires=">=3.9",
+    packages=find_packages(exclude=("tests",)),
+    python_requires=">=3.10",
+    install_requires=find_required(),
     # Platform-specific scripts
     scripts=get_platform_scripts(),
     entry_points=get_platform_entry_points(),
@@ -61,10 +67,11 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
     ],
     keywords="llm ai cli claude chatgpt deepseek anthropic openai",
     license="Apache-2.0",
