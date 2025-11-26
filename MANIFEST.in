@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+include requirements.txt
+include requirements.in
+include doq/version
+include doq-config-example.yaml
+recursive-include doq *.py
+recursive-include scripts *
