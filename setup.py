@@ -54,9 +54,9 @@ setup(
     long_description=read_readme(),
     long_description_content_type="text/markdown",
     author="Yuriy Sagitov",
-    author_email="home_r@mail.ru",
+    author_email="pro100.ko10ok@gmail.com",
     url="https://github.com/ko10ok/do",
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests",)),
     python_requires=">=3.9",
     install_requires=find_required(),
     # Platform-specific scripts
