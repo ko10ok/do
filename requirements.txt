@@ -43,8 +43,9 @@ idna==3.11
     #   anyio
     #   httpx
     #   requests
-jiter==0.12.0
+jiter==0.7.1
     # via
+    #   -r requirements.in
     #   anthropic
     #   openai
 openai==1.109.1
