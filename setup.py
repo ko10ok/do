@@ -18,6 +18,11 @@ def read_readme():
             return f.read()
     return ""
 
+def find_required():
+    with open("requirements.txt") as f:
+        return [line.strip() for line in f.read().splitlines()
+                if line.strip() and not line.startswith('#') and not line.startswith(' ')]
+
 # Platform-specific scripts
 def get_platform_scripts():
     """Return appropriate scripts based on platform."""
@@ -53,6 +58,7 @@ setup(
     url="https://github.com/ko10ok/do",
     packages=find_packages(),
     python_requires=">=3.9",
+    install_requires=find_required(),
     # Platform-specific scripts
     scripts=get_platform_scripts(),
     entry_points=get_platform_entry_points(),
